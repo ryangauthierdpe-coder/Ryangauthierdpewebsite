@@ -98,6 +98,16 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     return labels[serviceType] || serviceType;
   };
 
+  const getStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'pending': 'bg-amber-100 text-amber-800 border-amber-200',
+      'confirmed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      'completed': 'bg-blue-100 text-blue-800 border-blue-200',
+      'cancelled': 'bg-red-100 text-red-800 border-red-200'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
   const filteredBookings = filterStatus === 'all' 
     ? bookings 
     : bookings.filter(b => b.status === filterStatus);
@@ -367,7 +377,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-xl font-bold text-gray-900 mb-1">{booking.name}</h3>
-                          <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold">
+                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(booking.status)}`}>
                             {booking.status.toUpperCase()}
                           </span>
                         </div>
@@ -481,7 +491,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-xl font-bold text-gray-700 mb-1">{booking.name}</h3>
-                          <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
+                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(booking.status)}`}>
                             {booking.status.toUpperCase()}
                           </span>
                         </div>

@@ -39,7 +39,7 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
           />
           <div className="absolute inset-0 bg-slate-900/70"></div>
         </div>
-        <div className="relative z-10 text-center text-white px-4">
+        <div className="relative z-10 text-center text-white px-4 -mt-12">
           <img src={logo} alt="DPE Logo" className="w-72 h-auto mx-auto mb-2" />
           <h1 className="text-5xl font-bold mb-4">DESIGNATED PILOT EXAMINER</h1>
           <p className="text-gray-300 mb-8">
