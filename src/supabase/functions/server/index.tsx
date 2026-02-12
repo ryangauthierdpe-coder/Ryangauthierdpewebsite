@@ -644,6 +644,118 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
   }
 });
 
+// Delete a booking
+app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+    const booking = await kv.get(bookingId);
+    
+    if (!booking) {
+      return c.json({ error: 'Booking not found' }, 404);
+    }
+    
+    // Move the booking to deleted storage with a timestamp
+    const deletedBooking = {
+      ...booking,
+      deletedAt: new Date().toISOString()
+    };
+    
+    // Store in deleted prefix
+    await kv.set(`deleted_${bookingId}`, deletedBooking);
+    
+    // Remove from active bookings
+    await kv.del(bookingId);
+    
+    console.log(`Booking ${bookingId} moved to deleted storage`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Booking deleted successfully (moved to trash)',
+      deletedBookingId: bookingId
+    });
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    return c.json({ error: 'Failed to delete booking', details: error.message }, 500);
+  }
+});
+
+// Get all deleted bookings
+app.get("/make-server-e4d9f7d7/bookings/deleted/all", async (c) => {
+  try {
+    const deletedBookings = await kv.getByPrefix('deleted_booking_');
+    
+    // Sort by deletion date (newest first)
+    const sortedBookings = deletedBookings.sort((a, b) => {
+      return new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime();
+    });
+    
+    console.log(`Retrieved ${deletedBookings.length} deleted bookings`);
+    
+    return c.json({ bookings: sortedBookings });
+  } catch (error) {
+    console.error('Error fetching deleted bookings:', error);
+    return c.json({ error: 'Failed to fetch deleted bookings', details: error.message }, 500);
+  }
+});
+
+// Restore a deleted booking
+app.post("/make-server-e4d9f7d7/bookings/:id/restore", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+    const deletedBooking = await kv.get(`deleted_${bookingId}`);
+    
+    if (!deletedBooking) {
+      return c.json({ error: 'Deleted booking not found' }, 404);
+    }
+    
+    // Remove the deletedAt field and restore to active bookings
+    const { deletedAt, ...restoredBooking } = deletedBooking;
+    restoredBooking.restoredAt = new Date().toISOString();
+    
+    // Save back to active bookings
+    await kv.set(bookingId, restoredBooking);
+    
+    // Remove from deleted storage
+    await kv.del(`deleted_${bookingId}`);
+    
+    console.log(`Booking ${bookingId} restored from deleted storage`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Booking restored successfully',
+      booking: restoredBooking
+    });
+  } catch (error) {
+    console.error('Error restoring booking:', error);
+    return c.json({ error: 'Failed to restore booking', details: error.message }, 500);
+  }
+});
+
+// Permanently delete a booking
+app.delete("/make-server-e4d9f7d7/bookings/:id/permanent", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+    const deletedBooking = await kv.get(`deleted_${bookingId}`);
+    
+    if (!deletedBooking) {
+      return c.json({ error: 'Deleted booking not found' }, 404);
+    }
+    
+    // Permanently remove from deleted storage
+    await kv.del(`deleted_${bookingId}`);
+    
+    console.log(`Booking ${bookingId} permanently deleted`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Booking permanently deleted'
+    });
+  } catch (error) {
+    console.error('Error permanently deleting booking:', error);
+    return c.json({ error: 'Failed to permanently delete booking', details: error.message }, 500);
+  }
+});
+
 // Get busy times from Google Calendar
 app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
   try {

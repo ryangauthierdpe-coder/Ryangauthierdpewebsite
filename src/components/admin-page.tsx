@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut } from 'lucide-react';
+import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface Booking {
@@ -28,6 +28,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [updatingStatus, setUpdatingStatus] = useState<string>('');
   const [sendingReminder, setSendingReminder] = useState<string>('');
+  const [deletingBooking, setDeletingBooking] = useState<string>('');
+  const [deletedBookings, setDeletedBookings] = useState<Booking[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [restoringBooking, setRestoringBooking] = useState<string>('');
+  const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
 
   useEffect(() => {
     fetchBookings();
@@ -59,6 +64,31 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       setError(err instanceof Error ? err.message : 'Failed to load bookings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDeletedBookings = async () => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/deleted/all`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch deleted bookings');
+      }
+
+      setDeletedBookings(data.bookings || []);
+    } catch (err) {
+      console.error('Error fetching deleted bookings:', err);
+      alert(err instanceof Error ? err.message : 'Failed to load deleted bookings');
     }
   };
 
@@ -188,6 +218,162 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       alert(err instanceof Error ? err.message : 'Failed to send email reminder');
     } finally {
       setSendingReminder('');
+    }
+  };
+
+  const deleteBooking = async (bookingId: string) => {
+    // Confirm before deleting
+    const booking = bookings.find(b => b.bookingId === bookingId);
+    if (!booking) return;
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this booking?\n\n` +
+      `Name: ${booking.name}\n` +
+      `Date: ${formatDate(booking.selectedDate)}\n` +
+      `Time: ${booking.selectedTime}\n\n` +
+      `This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+    
+    setDeletingBooking(bookingId);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete booking');
+      }
+
+      // Update local state
+      setBookings(prevBookings =>
+        prevBookings.filter(b => b.bookingId !== bookingId)
+      );
+      
+      // Close the details panel if this booking was selected
+      if (selectedBooking?.bookingId === bookingId) {
+        setSelectedBooking(null);
+      }
+
+      alert('Booking deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting booking:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete booking');
+    } finally {
+      setDeletingBooking('');
+    }
+  };
+
+  const restoreBooking = async (bookingId: string) => {
+    // Confirm before restoring
+    const booking = deletedBookings.find(b => b.bookingId === bookingId);
+    if (!booking) return;
+    
+    const confirmRestore = window.confirm(
+      `Are you sure you want to restore this booking?\n\n` +
+      `Name: ${booking.name}\n` +
+      `Date: ${formatDate(booking.selectedDate)}\n` +
+      `Time: ${booking.selectedTime}\n\n` +
+      `This action cannot be undone.`
+    );
+    
+    if (!confirmRestore) return;
+    
+    setRestoringBooking(bookingId);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}/restore`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to restore booking');
+      }
+
+      // Update local state
+      setBookings(prevBookings =>
+        [...prevBookings, booking]
+      );
+      
+      // Close the details panel if this booking was selected
+      if (selectedBooking?.bookingId === bookingId) {
+        setSelectedBooking(null);
+      }
+
+      alert('Booking restored successfully!');
+    } catch (err) {
+      console.error('Error restoring booking:', err);
+      alert(err instanceof Error ? err.message : 'Failed to restore booking');
+    } finally {
+      setRestoringBooking('');
+    }
+  };
+
+  const permanentlyDeleteBooking = async (bookingId: string) => {
+    // Confirm before permanently deleting
+    const booking = deletedBookings.find(b => b.bookingId === bookingId);
+    if (!booking) return;
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete this booking?\n\n` +
+      `Name: ${booking.name}\n` +
+      `Date: ${formatDate(booking.selectedDate)}\n` +
+      `Time: ${booking.selectedTime}\n\n` +
+      `This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+    
+    setPermanentlyDeleting(bookingId);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}/permanent`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to permanently delete booking');
+      }
+
+      // Update local state - remove from deleted bookings
+      setDeletedBookings(prevBookings =>
+        prevBookings.filter(b => b.bookingId !== bookingId)
+      );
+      
+      // Close the details panel if this booking was selected
+      if (selectedBooking?.bookingId === bookingId) {
+        setSelectedBooking(null);
+      }
+
+      alert('Booking permanently deleted successfully!');
+    } catch (err) {
+      console.error('Error permanently deleting booking:', err);
+      alert(err instanceof Error ? err.message : 'Failed to permanently delete booking');
+    } finally {
+      setPermanentlyDeleting('');
     }
   };
 
@@ -340,6 +526,18 @@ export function AdminPage({ onLogout }: AdminPageProps) {
             <Download className="w-4 h-4" />
             Export to CSV
           </button>
+          <button
+            onClick={() => {
+              setShowDeleted(!showDeleted);
+              if (!showDeleted) {
+                fetchDeletedBookings();
+              }
+            }}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            {showDeleted ? 'Hide Deleted' : 'View Deleted'} ({deletedBookings.length})
+          </button>
           {onLogout && (
             <button
               onClick={onLogout}
@@ -469,6 +667,14 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                               <Send className="w-4 h-4" />
                               {sendingReminder === booking.bookingId ? 'Sending...' : 'Send Email Reminder'}
                             </button>
+                            <button
+                              onClick={() => deleteBooking(booking.bookingId)}
+                              disabled={deletingBooking === booking.bookingId}
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <AlertCircle className="w-4 h-4" />
+                              {deletingBooking === booking.bookingId ? 'Deleting...' : 'Delete Booking'}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -554,6 +760,126 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Deleted Bookings Section */}
+        {showDeleted && (
+          <div className="mt-12 pt-8 border-t-4 border-red-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-red-700 flex items-center gap-2">
+                  <Trash2 className="w-6 h-6" />
+                  Deleted Bookings
+                </h2>
+                <p className="text-gray-600 mt-1">These bookings can be restored or permanently deleted</p>
+              </div>
+            </div>
+
+            {deletedBookings.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                <Trash2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Deleted Bookings</h3>
+                <p className="text-gray-600">Deleted bookings will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {deletedBookings.map((booking) => (
+                  <div
+                    key={booking.bookingId}
+                    className="bg-red-50 border-2 border-red-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">{booking.name}</h3>
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(booking.status)}`}>
+                          {booking.status.toUpperCase()}
+                        </span>
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          Deleted: {formatTimestamp((booking as any).deletedAt)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedBooking(selectedBooking?.bookingId === booking.bookingId ? null : booking)}
+                        className="text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        {selectedBooking?.bookingId === booking.bookingId ? 'Hide Details' : 'View Details'}
+                      </button>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="flex items-center text-gray-700">
+                        <Calendar className="w-5 h-5 mr-2 text-red-600" />
+                        <span className="font-semibold">{formatDate(booking.selectedDate)}</span>
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <Clock className="w-5 h-5 mr-2 text-red-600" />
+                        <span>{booking.selectedTime}</span>
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <Mail className="w-5 h-5 mr-2 text-red-600" />
+                        <a href={`mailto:${booking.email}`} className="hover:underline">{booking.email}</a>
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <Phone className="w-5 h-5 mr-2 text-red-600" />
+                        <a href={`tel:${booking.phone}`} className="hover:underline">{booking.phone}</a>
+                      </div>
+                    </div>
+
+                    {selectedBooking?.bookingId === booking.bookingId && (
+                      <div className="mt-6 pt-6 border-t border-red-300">
+                        <div className="grid md:grid-cols-2 gap-4 mb-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">IACRA FTN</label>
+                            <p className="text-gray-900">{booking.iacraFtn}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">Aircraft</label>
+                            <p className="text-gray-900 flex items-center">
+                              <Plane className="w-4 h-4 mr-2 text-red-600" />
+                              {booking.aircraftMakeModel}
+                            </p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">Service Type</label>
+                            <p className="text-gray-900">{getServiceTypeLabel(booking.serviceType)}</p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">Booking ID</label>
+                            <p className="text-gray-500 text-sm font-mono">{booking.bookingId}</p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">Originally Submitted</label>
+                            <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons for Deleted Bookings */}
+                        <div className="flex flex-wrap gap-3 pt-4 border-t border-red-300">
+                          <button
+                            onClick={() => restoreBooking(booking.bookingId)}
+                            disabled={restoringBooking === booking.bookingId}
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            {restoringBooking === booking.bookingId ? 'Restoring...' : 'Restore Booking'}
+                          </button>
+                          <button
+                            onClick={() => permanentlyDeleteBooking(booking.bookingId)}
+                            disabled={permanentlyDeleting === booking.bookingId}
+                            className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {permanentlyDeleting === booking.bookingId ? 'Deleting...' : 'Permanently Delete'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
