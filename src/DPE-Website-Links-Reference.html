@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPE Website - Essential Links & Reference Guide</title>
+  <style>
+    @media print {
+      body {
+        margin: 0.5in;
+        font-size: 11pt;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      a {
+        color: #0066cc;
+        text-decoration: none;
+      }
+      a::after {
+        content: " (" attr(href) ")";
+        font-size: 9pt;
+        color: #666;
+      }
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    
+    h1 {
+      color: #10b981;
+      border-bottom: 3px solid #10b981;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    
+    h2 {
+      color: #047857;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      border-left: 4px solid #10b981;
+      padding-left: 10px;
+    }
+    
+    h3 {
+      color: #065f46;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    
+    .section {
+      margin-bottom: 25px;
+      padding: 15px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+    }
+    
+    .link-item {
+      margin-bottom: 15px;
+      padding-left: 10px;
+    }
+    
+    .link-item strong {
+      color: #047857;
+      display: block;
+      margin-bottom: 3px;
+    }
+    
+    .link-item a {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .link-item .purpose {
+      color: #666;
+      font-size: 0.95em;
+      margin-top: 3px;
+    }
+    
+    .checklist {
+      background-color: #ecfdf5;
+      padding: 15px;
+      border-left: 4px solid #10b981;
+      margin: 20px 0;
+    }
+    
+    .checklist li {
+      margin-bottom: 8px;
+    }
+    
+    .credentials {
+      background-color: #fef3c7;
+      padding: 15px;
+      border-left: 4px solid #f59e0b;
+      margin: 20px 0;
+    }
+    
+    .contact-info {
+      background-color: #dbeafe;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    
+    ul {
+      margin-top: 10px;
+    }
+    
+    li {
+      margin-bottom: 5px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .date {
+      text-align: right;
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛩️ DPE Website - Essential Links & Reference Guide</h1>
+  <p><strong>Ryan Gauthier, Designated Pilot Examiner</strong><br>
+  Boston FSDO: EA-61 | Westerly State Airport (WST)</p>
+</div>
+
+<div class="date">
+  Printed: February 11, 2026
+</div>
+
+<!-- SECTION 1: DEVELOPMENT & EDITING -->
+<div class="section">
+  <h2>📝 DEVELOPMENT & EDITING</h2>
+  
+  <div class="link-item">
+    <strong>Figma Make (Website Builder)</strong>
+    <div class="purpose">Purpose: Edit your website code, design, and functionality</div>
+    <div class="purpose">Access: Wherever you're currently using Figma Make</div>
+  </div>
+</div>
+
+<!-- SECTION 2: DATABASE & BACKEND -->
+<div class="section">
+  <h2>🗄️ DATABASE & BACKEND</h2>
+  
+  <div class="link-item">
+    <strong>Supabase Dashboard</strong>
+    <a href="https://supabase.com/dashboard">https://supabase.com/dashboard</a>
+    <div class="purpose">Purpose: View bookings database, manage backend, check logs</div>
+  </div>
+  
+  <div class="link-item">
+    <strong>Your Supabase Project</strong>
+    <div class="purpose">URL: https://supabase.com/dashboard/project/[your-project-id]</div>
+    <div class="purpose">Find your project ID in the URL when logged in</div>
+  </div>
+</div>
+
+<!-- SECTION 3: EMAIL SERVICE -->
+<div class="section">
+  <h2>📧 EMAIL SERVICE</h2>
+  
+  <div class="link-item">
+    <strong>Resend Dashboard</strong>
+    <a href="https://resend.com/dashboard">https://resend.com/dashboard</a>
+    <div class="purpose">Purpose: Monitor email delivery, check email logs</div>
+  </div>
+  
+  <div class="link-item">
+    <strong>Resend Domain Verification</strong>
+    <a href="https://resend.com/domains">https://resend.com/domains</a>
+    <div class="purpose">Purpose: Verify dperyan.com to send from noreply@dperyan.com</div>
+    <div class="purpose">Action: Add DNS records, verify domain</div>
+  </div>
+</div>
+
+<!-- SECTION 4: CALENDAR -->
+<div class="section">
+  <h2>📅 CALENDAR INTEGRATION</h2>
+  
+  <div class="link-item">
+    <strong>Google Cloud Console</strong>
+    <a href="https://console.cloud.google.com">https://console.cloud.google.com</a>
+    <div class="purpose">Purpose: Manage Google Calendar API credentials and keys</div>
+  </div>
+</div>
+
+<!-- SECTION 5: DOMAIN & DNS -->
+<div class="section">
+  <h2>🌐 DOMAIN & DNS</h2>
+  
+  <div class="link-item">
+    <strong>GoDaddy Domain Management</strong>
+    <a href="https://dcc.godaddy.com/manage/dperyan.com/dns">https://dcc.godaddy.com/manage/dperyan.com/dns</a>
+    <div class="purpose">Purpose: Connect domain to Vercel, add email DNS records</div>
+  </div>
+</div>
+
+<!-- SECTION 6: HOSTING -->
+<div class="section">
+  <h2>🚀 HOSTING & DEPLOYMENT</h2>
+  
+  <div class="link-item">
+    <strong>Vercel Dashboard</strong>
+    <a href="https://vercel.com/dashboard">https://vercel.com/dashboard</a>
+    <div class="purpose">Purpose: Deploy website, connect domain, set environment variables</div>
+  </div>
+  
+  <div class="link-item">
+    <strong>GitHub (Optional - Recommended)</strong>
+    <a href="https://github.com">https://github.com</a>
+    <div class="purpose">Purpose: Store code, enable automatic deployments</div>
+  </div>
+</div>
+
+<!-- PAGE BREAK -->
+<div class="page-break"></div>
+
+<!-- SECTION 7: YOUR LIVE WEBSITE -->
+<div class="section">
+  <h2>📊 YOUR LIVE WEBSITE (After Deployment)</h2>
+  
+  <div class="link-item">
+    <strong>Public Website</strong>
+    <a href="https://www.dperyan.com">https://www.dperyan.com</a>
+    <div class="purpose">Also: https://dperyan.com</div>
+  </div>
+  
+  <div class="link-item">
+    <strong>Admin Dashboard (Manage Bookings)</strong>
+    <a href="https://www.dperyan.com/admin">https://www.dperyan.com/admin</a>
+    <div class="purpose">Purpose: View, confirm, and manage appointment requests</div>
+  </div>
+  
+  <div class="link-item">
+    <strong>Schedule Page (Customer Booking)</strong>
+    <a href="https://www.dperyan.com/schedule">https://www.dperyan.com/schedule</a>
+    <div class="purpose">Purpose: Where customers book appointments</div>
+  </div>
+</div>
+
+<!-- SECTION 8: CREDENTIALS -->
+<div class="credentials">
+  <h2>🔑 CREDENTIALS YOU'LL NEED</h2>
+  <p><strong>⚠️ Keep these secure! Use a password manager.</strong></p>
+  <ul>
+    <li><strong>Supabase URL:</strong> From Supabase Project Settings → API</li>
+    <li><strong>Supabase Anon Key:</strong> From Supabase Project Settings → API</li>
+    <li><strong>Supabase Service Role Key:</strong> From Supabase Project Settings → API (Keep secret!)</li>
+    <li><strong>Resend API Key:</strong> From Resend Dashboard → API Keys</li>
+    <li><strong>Google Calendar API Key:</strong> From Google Cloud Console</li>
+    <li><strong>Google Calendar ID:</strong> Your calendar's email address</li>
+  </ul>
+  <p style="margin-top: 15px; color: #92400e;"><strong>Note:</strong> These are already configured in your Supabase environment variables. You only need them when deploying to Vercel.</p>
+</div>
+
+<!-- SECTION 9: QUICK ACCESS -->
+<div class="checklist">
+  <h2>🎯 BOOKMARK THESE 5 ESSENTIAL LINKS</h2>
+  <p><strong>When you get home, save these to your browser:</strong></p>
+  <ol>
+    <li><strong>Figma Make</strong> - Edit website</li>
+    <li><strong>Supabase Dashboard</strong> - Check bookings/backend</li>
+    <li><strong>Resend Dashboard</strong> - Verify domain, monitor emails</li>
+    <li><strong>GoDaddy DNS</strong> - Configure domain records</li>
+    <li><strong>Vercel Dashboard</strong> - Deploy & manage live site</li>
+  </ol>
+</div>
+
+<!-- SECTION 10: DEPLOYMENT STEPS -->
+<div class="section">
+  <h2>📋 DEPLOYMENT QUICK REFERENCE</h2>
+  
+  <h3>Step 1: Deploy to Vercel</h3>
+  <ol>
+    <li>Export code from Figma Make</li>
+    <li>Sign up at <a href="https://vercel.com">vercel.com</a></li>
+    <li>Create new project, upload code</li>
+    <li>Add environment variables (Supabase URL & Anon Key)</li>
+    <li>Click Deploy</li>
+  </ol>
+  
+  <h3>Step 2: Connect Domain in Vercel</h3>
+  <ol>
+    <li>Go to Project Settings → Domains</li>
+    <li>Add: dperyan.com and www.dperyan.com</li>
+    <li>Vercel will show DNS records</li>
+  </ol>
+  
+  <h3>Step 3: Update GoDaddy DNS</h3>
+  <ol>
+    <li>Log in to GoDaddy</li>
+    <li>Go to DNS settings for dperyan.com</li>
+    <li>Add A record: @ → 76.76.21.21</li>
+    <li>Add CNAME: www → cname.vercel-dns.com</li>
+  </ol>
+  
+  <h3>Step 4: Deploy Supabase Backend</h3>
+  <p><strong>From terminal/command prompt:</strong></p>
+  <pre style="background: #1f2937; color: #10b981; padding: 15px; border-radius: 5px; overflow-x: auto;">
+npm install -g supabase
+supabase login
+supabase link --project-ref [your-project-id]
+supabase functions deploy make-server-e4d9f7d7
+  </pre>
+  
+  <h3>Step 5: Verify Email Domain (Resend)</h3>
+  <ol>
+    <li>Go to <a href="https://resend.com/domains">resend.com/domains</a></li>
+    <li>Click "Add Domain", enter: dperyan.com</li>
+    <li>Add DNS records shown by Resend to GoDaddy</li>
+    <li>Click "Verify" in Resend</li>
+  </ol>
+</div>
+
+<!-- SECTION 11: DOCUMENTATION LINKS -->
+<div class="section">
+  <h2>📖 HELPFUL DOCUMENTATION</h2>
+  
+  <div class="link-item">
+    <strong>Vercel Deployment Guide</strong>
+    <a href="https://vercel.com/docs">https://vercel.com/docs</a>
+  </div>
+  
+  <div class="link-item">
+    <strong>Supabase Edge Functions</strong>
+    <a href="https://supabase.com/docs/guides/functions">https://supabase.com/docs/guides/functions</a>
+  </div>
+  
+  <div class="link-item">
+    <strong>Supabase CLI Documentation</strong>
+    <a href="https://supabase.com/docs/guides/cli">https://supabase.com/docs/guides/cli</a>
+  </div>
+  
+  <div class="link-item">
+    <strong>Resend Email Setup</strong>
+    <a href="https://resend.com/docs">https://resend.com/docs</a>
+  </div>
+</div>
+
+<!-- SECTION 12: CONTACT INFO -->
+<div class="contact-info">
+  <h2>📧 YOUR CONTACT INFORMATION</h2>
+  <p>
+    <strong>Name:</strong> Ryan Gauthier<br>
+    <strong>Title:</strong> Designated Pilot Examiner (DPE)<br>
+    <strong>FSDO:</strong> Boston EA-61<br>
+    <strong>Email:</strong> RyanGauthierDPE@gmail.com<br>
+    <strong>Phone:</strong> 860-912-3283<br>
+    <strong>Office:</strong> 56 Airport Road, Westerly, RI 02891<br>
+    <strong>Airport:</strong> Westerly State Airport (WST)
+  </p>
+</div>
+
+<!-- FOOTER -->
+<div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #10b981; text-align: center; color: #666;">
+  <p><strong>DPE Website Reference Guide</strong></p>
+  <p style="font-size: 0.9em;">Keep this document handy for accessing and managing your website</p>
+  <p style="font-size: 0.85em; margin-top: 15px;">Generated: February 11, 2026</p>
+</div>
+
+</body>
+</html>
