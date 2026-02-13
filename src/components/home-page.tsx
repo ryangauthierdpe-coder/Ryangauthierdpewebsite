@@ -158,18 +158,15 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
                 </div>
                 
                 <div className="flex justify-center mt-4">
-                  <a
-                    href="#schedule"
-                    onClick={(e) => {
-                      e.preventDefault();
+                  <button
+                    onClick={() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
-                      const scheduleBtn = document.querySelector('[data-page="schedule"]') as HTMLElement;
-                      scheduleBtn?.click();
+                      onNavigateToSchedule?.();
                     }}
                     className="inline-block bg-transparent border-2 border-emerald-600 hover:bg-emerald-600/10 text-emerald-600 px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     See Availability
-                  </a>
+                  </button>
                 </div>
                 <p className="text-gray-600 text-sm mt-6 text-center">
                   **Additional Authorizations coming soon.**
@@ -461,18 +458,15 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
             </div>
             
             <div className="mt-8 pt-8 border-t border-gray-200">
-              <a
-                href="#schedule"
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                  const scheduleBtn = document.querySelector('[data-page="schedule"]') as HTMLElement;
-                  scheduleBtn?.click();
+                  onNavigateToSchedule?.();
                 }}
                 className="block w-full bg-transparent border-2 border-emerald-600 hover:bg-emerald-600/10 text-emerald-600 text-center px-6 py-3 rounded-lg transition-colors"
               >
-                Schedule an Appointment
-              </a>
+                Schedule a Checkride
+              </button>
             </div>
           </div>
         </div>

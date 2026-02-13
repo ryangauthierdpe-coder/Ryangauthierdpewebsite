@@ -261,7 +261,7 @@ export function SchedulePage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <Calendar className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold mb-4">Schedule Your Appointment</h1>
+          <h1 className="text-4xl font-bold mb-4">Schedule Your Checkride</h1>
           <p className="text-gray-600">
             Select an available date and time, then complete the booking form below.
           </p>
