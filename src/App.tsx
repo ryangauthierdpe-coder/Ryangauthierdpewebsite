@@ -12,6 +12,7 @@ import { ChatBox } from './components/chat-box';
 import { Menu, X } from 'lucide-react';
 import { CalendarCheck } from 'lucide-react';
 import logo from 'figma:asset/d0ddd2463241120a30a55bfb7d41b4a075838de5.png';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'schedule' | 'preparation' | 'about' | 'references' | 'faq' | 'debrief-digest' | 'admin'>('home');
@@ -216,6 +217,8 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      <Analytics />
     </div>
   );
 }
