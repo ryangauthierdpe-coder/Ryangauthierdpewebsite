@@ -58,6 +58,19 @@ export default function App() {
   const handleNavigate = (page: 'home' | 'schedule' | 'preparation' | 'about' | 'references' | 'faq' | 'debrief-digest' | 'admin') => {
     setCurrentPage(page);
     setIsMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleServicesClick = () => {
+    setCurrentPage('home');
+    setIsMenuOpen(false);
+    // Wait for page to render, then scroll to services section
+    setTimeout(() => {
+      const servicesSection = document.getElementById('services-section');
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   return (
@@ -128,6 +141,12 @@ export default function App() {
                   }`}
                 >
                   Schedule
+                </button>
+                <button
+                  onClick={handleServicesClick}
+                  className="w-full text-left px-4 py-3 transition-colors text-gray-300 hover:bg-emerald-400/10 hover:text-emerald-300"
+                >
+                  Services
                 </button>
                 <button
                   onClick={() => handleNavigate('preparation')}
