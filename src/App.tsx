@@ -97,7 +97,7 @@ export default function App() {
 
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="absolute top-16 right-0 w-64 bg-slate-800 shadow-lg rounded-bl-lg border-t-2 border-emerald-400 overflow-hidden">
+            <div className="absolute top-16 right-80 w-64 bg-slate-800 shadow-lg rounded-bl-lg border-t-2 border-emerald-400 overflow-hidden">
               <div className="py-2">
                 <button
                   onClick={() => handleNavigate('home')}

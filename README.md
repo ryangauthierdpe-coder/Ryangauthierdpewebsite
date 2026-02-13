@@ -1,7 +1,7 @@
 
-  # Personal Pilot Examiner Website
+  # Ryan Gauthier, DPE
 
-  This is a code bundle for Personal Pilot Examiner Website. The original project is available at https://www.figma.com/design/FiXfGIdY0bz3Dq792ENvZP/Personal-Pilot-Examiner-Website.
+  This is a code bundle for Ryan Gauthier, DPE. The original project is available at https://www.figma.com/design/FiXfGIdY0bz3Dq792ENvZP/Ryan-Gauthier--DPE.
 
   ## Running the code
 
