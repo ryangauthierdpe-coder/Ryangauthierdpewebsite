@@ -54,15 +54,13 @@ export function AboutPage() {
             <p className="text-lg text-gray-700 mb-6">
               Ryan earned his Private Pilot Certificate while still in high school and subsequently attended 
               the Florida Institute of Technology, where he earned a BS in Aviation Management with Flight. 
-              He graduated in 2007 and shortly thereafter entered into a partnership that led to the purchase 
-              of his first flight school in 2008.
+              After graduating, he entered into a partnership that led to the purchase of his first flight school in 2008.
             </p>
 
             <p className="text-lg text-gray-700 mb-6">
               In 2012, Ryan expanded into charter operations with the acquisition of Action Air. He currently 
-              oversees multiple flight schools and Part 135 charter operations based in Connecticut and Rhode 
-              Island. He continues to fly as a 
-              Part 135 charter pilot and serves as an active Designated Pilot Examiner and FAA Safety Team 
+              oversees a flight school and Part 135 charter operation based in Connecticut and Rhode 
+              Island. He continues to fly as a Part 135 charter pilot and serves as an active Designated Pilot Examiner and FAA Safety Team 
               Representative.
             </p>
 
@@ -171,7 +169,6 @@ export function AboutPage() {
             <div>
               <div className="font-semibold text-lg text-gray-900">Florida Institute of Technology</div>
               <div className="text-gray-700">Bachelor of Science in Aviation Management with Flight</div>
-              <div className="text-gray-600">Graduated 2007</div>
             </div>
           </div>
         </div>
