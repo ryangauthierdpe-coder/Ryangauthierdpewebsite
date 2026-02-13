@@ -85,7 +85,7 @@ export function DebriefDigestPage() {
                 <li className="flex items-start">
                   <span className="text-indigo-600 mr-3 font-bold text-lg">•</span>
                   <div className="text-gray-800">
-                    <strong>Requirement:</strong> 10 TAKEOFFS and 10 LANDINGS to a full stop at night, each in the traffic pattern <span className="text-sm">(61.109(a)(2)(ii))</span>.
+                    <strong>Requirement:</strong> 10 TAKEOFFS and 10 LANDINGS to a full stop at night, with each landing involving a flight in the traffic pattern <span className="text-sm">(61.109(a)(2)(ii))</span>.
                   </div>
                 </li>
                 <li className="flex items-start">
