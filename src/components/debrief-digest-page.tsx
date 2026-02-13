@@ -16,7 +16,7 @@ export function DebriefDigestPage() {
         </div>
         <div className="relative z-10 text-center text-white px-4">
           <FileText className="w-12 h-12 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold">Debrief Digest</h1>
+          <h1 className="text-4xl font-bold">Ryan's Debrief Digest</h1>
           <p className="text-xl text-gray-200 mt-2">
             Observations and feedback from recent practical tests
           </p>
@@ -45,6 +45,7 @@ export function DebriefDigestPage() {
         {/* Main Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-center text-gray-900">Ryan's Debrief Digest</h2>
+          <p className="text-sm text-center text-gray-600 mt-2">(Updated January 2026)</p>
         </div>
 
         {/* Section 1: Qualifying the Applicant */}

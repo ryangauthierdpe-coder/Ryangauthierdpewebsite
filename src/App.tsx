@@ -127,7 +127,7 @@ export default function App() {
                       : 'text-gray-300 hover:bg-emerald-400/10 hover:text-emerald-300'
                   }`}
                 >
-                  Schedule Appointment
+                  Schedule
                 </button>
                 <button
                   onClick={() => handleNavigate('preparation')}
