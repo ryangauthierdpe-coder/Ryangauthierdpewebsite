@@ -3,22 +3,25 @@ import { Plane, CheckCircle, FileText, MapPin, Phone, Mail, ChevronDown } from '
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { ContactModal } from './contact-modal';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import heroImage from 'figma:asset/3162b93294b2a2cca948042b0f884a1e0f88b4ad.png';
 import aboutImage from 'figma:asset/5287011f43e89a904f734f9806fea8537278eba8.png';
 import logo from 'figma:asset/d0ddd2463241120a30a55bfb7d41b4a075838de5.png';
 
-interface HomePageProps {
-  onNavigateToSchedule?: () => void;
-}
-
-export function HomePage({ onNavigateToSchedule }: HomePageProps) {
+export function HomePage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactSubject, setContactSubject] = useState('General Inquiry');
   const [isFeesOpen, setIsFeesOpen] = useState(false);
+  const navigate = useNavigate();
 
   const openContactModal = (subject: string) => {
     setContactSubject(subject);
     setIsContactModalOpen(true);
+  };
+
+  const handleScheduleClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/schedule');
   };
 
   return (
@@ -47,10 +50,7 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
             <span className="text-lg">Boston FSDO: EA-61</span>
           </p>
           <button
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              onNavigateToSchedule?.();
-            }}
+            onClick={handleScheduleClick}
             className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-10 py-4 rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Schedule Your Checkride
@@ -159,10 +159,7 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
                 
                 <div className="flex justify-center mt-4">
                   <button
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                      onNavigateToSchedule?.();
-                    }}
+                    onClick={handleScheduleClick}
                     className="inline-block bg-transparent border-2 border-emerald-600 hover:bg-emerald-600/10 text-emerald-600 px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     See Availability
@@ -459,10 +456,7 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
             
             <div className="mt-8 pt-8 border-t border-gray-200">
               <button
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                  onNavigateToSchedule?.();
-                }}
+                onClick={handleScheduleClick}
                 className="block w-full bg-transparent border-2 border-emerald-600 hover:bg-emerald-600/10 text-emerald-600 text-center px-6 py-3 rounded-lg transition-colors"
               >
                 Schedule a Checkride

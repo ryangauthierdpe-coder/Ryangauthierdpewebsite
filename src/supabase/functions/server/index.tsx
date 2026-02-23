@@ -201,7 +201,7 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
         
         <p>Please log in to your admin dashboard to confirm or manage this appointment:</p>
-        <p><a href="https://your-website-url.com/admin" style="background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Admin Dashboard</a></p>
+        <p><a href="https://dperyan.com/admin" style="background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Admin Dashboard</a></p>
       `;
       
       const response = await fetch('https://api.resend.com/emails', {

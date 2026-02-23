@@ -1,12 +1,16 @@
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { ClipboardCheck, FileCheck, AlertCircle, BookOpen, Clock, CheckCircle, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import airportMapImage from 'figma:asset/3d0596824d53551a76219554a0024979bae2da40.png';
 
-interface PreparationPageProps {
-  onNavigateToSchedule?: () => void;
-}
+export function PreparationPage() {
+  const navigate = useNavigate();
 
-export function PreparationPage({ onNavigateToSchedule }: PreparationPageProps) {
+  const handleScheduleClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/schedule');
+  };
+
   return (
     <div className="bg-slate-100 min-h-screen">
       {/* Header Section */}
@@ -42,7 +46,7 @@ export function PreparationPage({ onNavigateToSchedule }: PreparationPageProps) 
               <div className="flex items-center flex-wrap pt-1 gap-2">
                 <span className="text-lg text-gray-900 font-semibold">Review Ryan's schedule and choose a suitable date.</span>
                 <button
-                  onClick={onNavigateToSchedule}
+                  onClick={handleScheduleClick}
                   className="px-3 py-1 bg-emerald-600 text-white text-sm font-semibold rounded hover:bg-emerald-700 transition-colors whitespace-nowrap"
                 >
                   View Schedule
