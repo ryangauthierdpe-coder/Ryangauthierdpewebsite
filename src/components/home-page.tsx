@@ -65,16 +65,16 @@ export function HomePage({ onNavigateToSchedule }: HomePageProps) {
             <div>
               <h2 className="text-3xl font-bold mb-6 text-center">Professional FAA Certification Services</h2>
               <p className="text-gray-700 mb-4">
-                As an FAA Designated Pilot Examiner, I provide fair, thorough, and consistent practical testing for pilots working toward their initial certification or advanced ratings.
+                Welcome, and thank you for visiting.
               </p>
               <p className="text-gray-700 mb-4">
-                Every test follows FAA regulations and the Airman Certification Standards (ACS), with a focus on safety, skill, and sound decision-making. My goal is to create a clear, professional, and supportive testing environment where you can confidently show your abilities.
+                As an FAA Designated Pilot Examiner, I strive to provide fair and thorough practical testing for pilots pursuing their initial certification or advanced ratings. Each evaluation is conducted in accordance with FAA regulations and the applicable Airman Certification Standards (ACS), with an emphasis on safety, proficiency, and sound aeronautical decision-making.
               </p>
               <p className="text-gray-700 mb-4">
-                With over 20 years of aviation experience and a dedication to excellence, I strive to make each evaluation structured yet approachable, helping you perform at your best.
+                With over 20 years of aviation experience, I am committed to maintaining a structured, professional, and supportive testing environment where applicants can confidently demonstrate their knowledge and skill. My goal is to ensure every practical test is clear, transparent, and conducted with professionalism and respect.
               </p>
               <p className="text-gray-700">
-                Whether you're earning your Private Pilot Certificate or seeking administrative certification services, I'm committed to guiding you through a smooth, transparent, and professional testing process from start to finish.
+                Whether you are working toward your Private Pilot Certificate or seeking administrative certification services, I look forward to guiding you through a smooth and professional certification process from start to finish.
               </p>
             </div>
             <div className="relative h-[400px] rounded-lg overflow-hidden shadow-lg">

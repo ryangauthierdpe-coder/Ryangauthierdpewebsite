@@ -513,7 +513,8 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           },
           body: JSON.stringify({
             from: 'Ryan Gauthier DPE <noreply@resend.dev>',
-            to: ['ryangauthierdpe@gmail.com'], // Temporarily sending to your email until domain is verified
+            to: [updatedBooking.email], // Send to the applicant
+            cc: ['ryangauthierdpe@gmail.com'], // CC Ryan's email
             subject: `Appointment Confirmed - ${formattedDate} at ${updatedBooking.selectedTime}`,
             html: confirmationEmailHtml,
           }),
@@ -528,6 +529,126 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         }
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
+        // Don't fail the status update if email fails
+      }
+    }
+  }
+  
+  // Send automatic cancellation email to customer if status is "cancelled"
+  if (status === 'cancelled') {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+    
+    // Delete Google Calendar event if it exists
+    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey) {
+      try {
+        console.log(`🗑️ Attempting to delete Google Calendar event: ${updatedBooking.calendarEventId}`);
+        
+        // Get OAuth access token using Service Account
+        const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+        
+        const calendarResponse = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${updatedBooking.calendarEventId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+        
+        if (calendarResponse.ok || calendarResponse.status === 204) {
+          console.log(`✅ Google Calendar event deleted for booking ${bookingId}`);
+          updatedBooking.calendarEventId = null; // Clear the event ID
+          await kv.set(bookingId, updatedBooking);
+        } else {
+          const errorText = await calendarResponse.text();
+          console.error('❌ Failed to delete Google Calendar event:', errorText);
+        }
+      } catch (calendarError) {
+        console.error('❌ Error deleting Google Calendar event:', calendarError);
+        // Don't fail the cancellation if calendar deletion fails
+      }
+    }
+    
+    // Send cancellation email to applicant
+    if (resendApiKey) {
+      try {
+        const appointmentDate = new Date(updatedBooking.selectedDate + 'T00:00:00');
+        const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const cancellationEmailHtml = `
+          <p>Dear ${updatedBooking.name},</p>
+          <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>cancelled</strong>.</p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>CANCELLED APPOINTMENT DETAILS:</h3>
+          <p>
+            <strong>Date:</strong> ${formattedDate}<br>
+            <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
+            <strong>Location:</strong> Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>NEXT STEPS:</h3>
+          <p>If you would like to reschedule your appointment, please contact me at your earliest convenience.</p>
+          
+          <p>
+            <strong>Phone:</strong> 860-912-3283<br>
+            <strong>Email:</strong> RyanGauthierDPE@gmail.com<br>
+            <strong>Website:</strong> <a href="http://www.DPERyan.com">www.DPERyan.com</a>
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <p>If you have any questions about this cancellation or would like to discuss rescheduling, please don't hesitate to reach out.</p>
+          
+          <p>All the best,</p>
+          <p>Ryan</p>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
+            --<br>
+            <strong>Ryan Gauthier</strong><br>
+            Designated Pilot Examiner (DPE)<br>
+            Boston FSDO: EA-61<br>
+            Email: RyanGauthierDPE@gmail.com<br>
+            Phone: 860-912-3283
+          </p>
+        `;
+        
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+            to: [updatedBooking.email], // Send to the applicant
+            cc: ['ryangauthierdpe@gmail.com'], // CC Ryan's email
+            subject: `Appointment Cancelled - ${formattedDate}`,
+            html: cancellationEmailHtml,
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log(`Cancellation email sent to ${updatedBooking.email} for booking ${bookingId}`);
+        } else {
+          console.error('Failed to send cancellation email:', result);
+        }
+      } catch (emailError) {
+        console.error('Error sending cancellation email:', emailError);
         // Don't fail the status update if email fails
       }
     }
