@@ -7,7 +7,6 @@ import { AboutPage } from './components/about-page';
 import { ReferencesPage } from './components/references-page';
 import { FAQPage } from './components/faq-page';
 import { DebriefDigestPage } from './components/debrief-digest-page';
-import { AdminRoute } from './components/admin-route';
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +20,6 @@ export const router = createBrowserRouter([
       { path: "references", Component: ReferencesPage },
       { path: "faq", Component: FAQPage },
       { path: "debrief-digest", Component: DebriefDigestPage },
-      { path: "admin", Component: AdminRoute },
     ],
   },
 ]);

@@ -2,13 +2,28 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { ChatBox } from './chat-box';
 import { Menu, X, CalendarCheck } from 'lucide-react';
+import { AdminPage } from './admin-page';
 
 export function Root() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAdminPage, setShowAdminPage] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const currentPath = location.pathname.substring(1) || 'home';
+
+  // Admin page keyboard shortcut (Ctrl+Shift+A)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        setShowAdminPage(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleNavigate = (path: string) => {
     navigate(path === 'home' ? '/' : `/${path}`);
@@ -150,7 +165,11 @@ export function Root() {
       </nav>
 
       <main>
-        <Outlet />
+        {showAdminPage ? (
+          <AdminPage onLogout={() => setShowAdminPage(false)} />
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       <ChatBox />
