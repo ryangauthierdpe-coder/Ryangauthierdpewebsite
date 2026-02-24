@@ -211,7 +211,7 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'DPE Booking System <onboarding@resend.dev>',
+          from: 'DPE Booking System <noreply@dperyan.com>',
           to: ['ryangauthierdpe@gmail.com'],
           subject: `🔔 New Appointment Request - ${booking.name} on ${formattedDate}`,
           html: dpeEmailHtml,
@@ -512,7 +512,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+            from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
             to: [updatedBooking.email], // Send to the applicant
             cc: ['ryangauthierdpe@gmail.com'], // CC Ryan's email
             subject: `Appointment Confirmed - ${formattedDate} at ${updatedBooking.selectedTime}`,
@@ -523,9 +523,46 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const result = await response.json();
         
         if (response.ok) {
-          console.log(`Confirmation email sent to ${updatedBooking.email} for booking ${bookingId}`);
+          console.log(`✅ Confirmation email sent to ${updatedBooking.email} for booking ${bookingId}`);
         } else {
-          console.error('Failed to send confirmation email:', result);
+          console.error('❌ Failed to send confirmation email:', result);
+          
+          // Check if it's a domain verification error
+          if (result.statusCode === 403 && result.message?.includes('verify a domain')) {
+            console.error('⚠️  RESEND DOMAIN VERIFICATION REQUIRED:');
+            console.error('   1. Go to https://resend.com/domains');
+            console.error('   2. Add and verify your domain (dperyan.com)');
+            console.error('   3. Update the "from" email to use your verified domain (e.g., noreply@dperyan.com)');
+            console.error('   📧 In the meantime, emails can only be sent to: ryangauthierdpe@gmail.com');
+            
+            // Send a copy to the DPE's email so they have the confirmation details
+            try {
+              const fallbackResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+                  to: ['ryangauthierdpe@gmail.com'],
+                  subject: `[COPY FOR YOUR RECORDS] Appointment Confirmed - ${updatedBooking.name} on ${formattedDate}`,
+                  html: `
+                    <p><strong>⚠️ Note:</strong> This is a copy of the confirmation email that should have been sent to ${updatedBooking.email}. 
+                    Please forward this manually or contact the applicant directly.</p>
+                    <hr style="margin: 20px 0;">
+                    ${confirmationEmailHtml}
+                  `,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                console.log(`✅ Fallback email sent to ryangauthierdpe@gmail.com with confirmation details`);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Failed to send fallback email:', fallbackError);
+            }
+          }
         }
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
@@ -632,7 +669,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+            from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
             to: [updatedBooking.email], // Send to the applicant
             cc: ['ryangauthierdpe@gmail.com'], // CC Ryan's email
             subject: `Appointment Cancelled - ${formattedDate}`,
@@ -643,9 +680,46 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const result = await response.json();
         
         if (response.ok) {
-          console.log(`Cancellation email sent to ${updatedBooking.email} for booking ${bookingId}`);
+          console.log(`✅ Cancellation email sent to ${updatedBooking.email} for booking ${bookingId}`);
         } else {
-          console.error('Failed to send cancellation email:', result);
+          console.error('❌ Failed to send cancellation email:', result);
+          
+          // Check if it's a domain verification error
+          if (result.statusCode === 403 && result.message?.includes('verify a domain')) {
+            console.error('⚠️  RESEND DOMAIN VERIFICATION REQUIRED:');
+            console.error('   1. Go to https://resend.com/domains');
+            console.error('   2. Add and verify your domain (dperyan.com)');
+            console.error('   3. Update the "from" email to use your verified domain (e.g., noreply@dperyan.com)');
+            console.error('   📧 In the meantime, emails can only be sent to: ryangauthierdpe@gmail.com');
+            
+            // Send a copy to the DPE's email so they have the cancellation details
+            try {
+              const fallbackResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+                  to: ['ryangauthierdpe@gmail.com'],
+                  subject: `[COPY FOR YOUR RECORDS] Appointment Cancelled - ${updatedBooking.name} on ${formattedDate}`,
+                  html: `
+                    <p><strong>⚠️ Note:</strong> This is a copy of the cancellation email that should have been sent to ${updatedBooking.email}. 
+                    Please forward this manually or contact the applicant directly.</p>
+                    <hr style="margin: 20px 0;">
+                    ${cancellationEmailHtml}
+                  `,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                console.log(`✅ Fallback cancellation email sent to ryangauthierdpe@gmail.com`);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Failed to send fallback cancellation email:', fallbackError);
+            }
+          }
         }
       } catch (emailError) {
         console.error('Error sending cancellation email:', emailError);
@@ -738,7 +812,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Ryan Gauthier DPE <onboarding@resend.dev>',
+        from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
         to: [booking.email],
         subject: `Appointment Reminder - ${formattedDate} at ${booking.selectedTime}`,
         html: emailHtml,
@@ -980,7 +1054,7 @@ app.post("/make-server-e4d9f7d7/send-message", async (c) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'DPE Website Contact <onboarding@resend.dev>',
+      from: 'DPE Website Contact <noreply@dperyan.com>',
       reply_to: email,
       to: ['ryangauthierdpe@gmail.com'],
       subject: `💬 New Message from ${name}`,
@@ -1057,7 +1131,7 @@ app.post("/make-server-e4d9f7d7/contact", async (c) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'DPE Website Contact <onboarding@resend.dev>',
+      from: 'DPE Website Contact <noreply@dperyan.com>',
       reply_to: email,
       to: ['ryangauthierdpe@gmail.com'],
       subject: `📧 ${subject || 'Contact Form'} - ${name}`,
