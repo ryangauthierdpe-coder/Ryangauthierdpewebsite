@@ -554,16 +554,57 @@ export function FAQPage() {
       title: "5. English Language Proficiency (AELS)",
       items: [
         {
-          question: "What must I demonstrate regarding English proficiency?",
-          answer: "The ability to communicate in English in a discernible and understandable manner."
+          question: "Is English language proficiency required for an FAA certificate?",
+          answer: "Yes. Applicants for certificates issued under 14 CFR Parts 61, 63, 65, and 107 must be able to read, write, speak, and understand the English language. This is a regulatory eligibility requirement for certification."
         },
         {
-          question: "What happens if English proficiency is in question before the test begins?",
-          answer: "The test will not begin, and the applicant will be referred to the appropriate Flight Standards Office (FSO)."
+          question: "What level of English proficiency does the FAA require?",
+          answer: "The FAA has adopted ICAO Operational Level 4 as the minimum acceptable standard. This level ensures an applicant can communicate effectively in normal and non-routine aviation situations."
         },
         {
-          question: "What happens if English proficiency becomes an issue during the test?",
-          answer: "The test is discontinued, and a Notice of Disapproval is issued."
+          question: "What does the FAA evaluate when assessing English language proficiency?",
+          answer: [
+            "The FAA evaluates the ability to:",
+            "",
+            "• Read English",
+            "• Write English",
+            "• Speak clearly and understandably",
+            "• Understand spoken English, including ATC instructions",
+            "• Communicate effectively in aviation-related situations",
+            "",
+            "For pilots, this includes the ability to comply with ATC instructions and ensure effective crew communication."
+          ]
+        },
+        {
+          question: "Can a Designated Examiner question an applicant's English proficiency during a practical test?",
+          answer: "Yes. If an examiner or instructor questions whether an applicant meets the English language eligibility requirement, they may refer the applicant to the local Flight Standards District Office (FSDO) for a formal Aviation English Language Standard (AELS) assessment."
+        },
+        {
+          question: "What happens if an applicant is referred to the FSDO for an English language assessment?",
+          answer: "The FSDO will conduct an assessment to determine whether the applicant meets the FAA's English language standard. If the applicant does not contact the FSDO within a reasonable time, a stop may be placed on the application until the issue is resolved."
+        },
+        {
+          question: "What happens if an applicant does not meet the FAA English Language Standard?",
+          answer: [
+            "• For certificate applicants: The application will be disapproved until the applicant demonstrates compliance.",
+            "",
+            "• For certificated airmen: The FAA may initiate reexamination under 49 U.S.C. § 44709.",
+            "",
+            "• In some cases involving medical limitations, operating limitations or exemptions may be issued if permitted by regulation."
+          ]
+        },
+        {
+          question: "How is English proficiency assessed?",
+          answer: [
+            "Assessment may include:",
+            "",
+            "• Conversational interaction",
+            "• Reading aviation materials and explaining them",
+            "• Listening to ATC instructions and explaining what was heard",
+            "• Demonstrating the ability to communicate clearly in aviation contexts",
+            "",
+            "For pilots, the evaluation may include observation during flight operations to ensure effective real-world communication."
+          ]
         }
       ]
     },
