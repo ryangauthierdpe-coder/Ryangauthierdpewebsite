@@ -514,31 +514,72 @@ export function SchedulePage() {
                 <div>
                   <p className="text-sm text-gray-600 mb-4">Choose your preferred time slot:</p>
                   <div className="space-y-3">
-                    {generateTimeSlots(SERVICE_DURATIONS[formData.serviceType]).map((slot) => {
-                      const isAvailable = isTimeSlotAvailable(selectedDate, slot.start, SERVICE_DURATIONS[formData.serviceType]);
-                      const isSelected = selectedTime === slot.label;
+                    {(() => {
+                      const allSlots = generateTimeSlots(SERVICE_DURATIONS[formData.serviceType]);
                       
-                      return (
-                        <button
-                          key={slot.label}
-                          onClick={() => isAvailable && handleTimeSelect(slot.label)}
-                          disabled={!isAvailable}
-                          className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                            isSelected
-                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
-                              : !isAvailable
-                              ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg">{slot.label}</span>
-                            {!isAvailable && <span className="text-xs text-red-500">Unavailable</span>}
-                            {isSelected && <span className="text-emerald-600 text-lg">✓</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
+                      // For 6-hour events, only show 9:00 AM if it's available
+                      const duration = SERVICE_DURATIONS[formData.serviceType];
+                      if (duration === 6) {
+                        const nineAmSlot = allSlots.find(slot => slot.start === 9);
+                        const isNineAmAvailable = nineAmSlot && isTimeSlotAvailable(selectedDate, nineAmSlot.start, duration);
+                        
+                        // If 9:00 AM is available, only show that slot
+                        if (isNineAmAvailable) {
+                          return [nineAmSlot].map((slot) => {
+                            const isAvailable = isTimeSlotAvailable(selectedDate, slot.start, duration);
+                            const isSelected = selectedTime === slot.label;
+                            
+                            return (
+                              <button
+                                key={slot.label}
+                                onClick={() => isAvailable && handleTimeSelect(slot.label)}
+                                disabled={!isAvailable}
+                                className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                                  isSelected
+                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
+                                    : !isAvailable
+                                    ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
+                                }`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <span className="text-lg">{slot.label}</span>
+                                  {!isAvailable && <span className="text-xs text-red-500">Unavailable</span>}
+                                  {isSelected && <span className="text-emerald-600 text-lg">✓</span>}
+                                </div>
+                              </button>
+                            );
+                          });
+                        }
+                      }
+                      
+                      // For non-6-hour events, or if 9 AM is not available, show all slots
+                      return allSlots.map((slot) => {
+                        const isAvailable = isTimeSlotAvailable(selectedDate, slot.start, SERVICE_DURATIONS[formData.serviceType]);
+                        const isSelected = selectedTime === slot.label;
+                        
+                        return (
+                          <button
+                            key={slot.label}
+                            onClick={() => isAvailable && handleTimeSelect(slot.label)}
+                            disabled={!isAvailable}
+                            className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                              isSelected
+                                ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
+                                : !isAvailable
+                                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg">{slot.label}</span>
+                              {!isAvailable && <span className="text-xs text-red-500">Unavailable</span>}
+                              {isSelected && <span className="text-emerald-600 text-lg">✓</span>}
+                            </div>
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                   
                   {selectedTime && (
