@@ -12,6 +12,9 @@ export function HomePage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactSubject, setContactSubject] = useState('General Inquiry');
   const [isFeesOpen, setIsFeesOpen] = useState(false);
+  const [isPrivatePilotOpen, setIsPrivatePilotOpen] = useState(false);
+  const [isInstrumentRatingOpen, setIsInstrumentRatingOpen] = useState(false);
+  const [isCommercialPilotOpen, setIsCommercialPilotOpen] = useState(false);
   const navigate = useNavigate();
 
   const openContactModal = (subject: string) => {
@@ -19,9 +22,13 @@ export function HomePage() {
     setIsContactModalOpen(true);
   };
 
-  const handleScheduleClick = () => {
+  const handleScheduleClick = (serviceType?: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    navigate('/schedule');
+    if (serviceType) {
+      navigate(`/schedule?service=${serviceType}`);
+    } else {
+      navigate('/schedule');
+    }
   };
 
   return (
@@ -95,22 +102,125 @@ export function HomePage() {
         
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Checkrides */}
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
                 <CheckCircle className="w-10 h-10 text-emerald-600" />
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-semibold mb-2">Practical Tests</h3>
-                <div className="mb-4">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-bold text-gray-700">Private Pilot - Airplane Single Engine Land (ASEL)</span>
-                    <span className="text-2xl font-bold text-emerald-600">$850</span>
-                  </div>
+                <h3 className="text-2xl font-semibold mb-4">Practical Tests</h3>
+                
+                {/* Private Pilot Certificate */}
+                <div className="mb-4 border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setIsPrivatePilotOpen(!isPrivatePilotOpen)}
+                    className="w-full flex items-center justify-between text-left px-4 py-3 bg-white hover:bg-emerald-100 rounded-lg transition-colors"
+                  >
+                    <span className="font-bold text-emerald-700 hover:text-emerald-900 text-lg">Private Pilot Certificate</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-emerald-600 transition-transform duration-200 ${
+                        isPrivatePilotOpen ? 'transform rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  {isPrivatePilotOpen && (
+                    <div className="px-4 py-3 space-y-2 border-t border-gray-200 bg-gray-50">
+                      <button
+                        onClick={() => handleScheduleClick('pp-initial-asel')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">INITIAL Private Pilot - Airplane Single Engine Land (ASEL)</span>
+                        <span className="text-xl font-bold text-emerald-600">$950</span>
+                      </button>
+                      <button
+                        onClick={() => handleScheduleClick('pp-initial-amel')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">INITIAL Private Pilot - Airplane Multiengine Land (AMEL)</span>
+                        <span className="text-xl font-bold text-emerald-600">$1,000</span>
+                      </button>
+                      <button
+                        onClick={() => handleScheduleClick('pp-added-class')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">Added Class Rating - ASEL or AMEL</span>
+                        <span className="text-xl font-bold text-emerald-600">$850</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Instrument Rating */}
+                <div className="mb-4 border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setIsInstrumentRatingOpen(!isInstrumentRatingOpen)}
+                    className="w-full flex items-center justify-between text-left px-4 py-3 bg-white hover:bg-emerald-100 rounded-lg transition-colors"
+                  >
+                    <span className="font-bold text-emerald-700 hover:text-emerald-900 text-lg">Instrument Rating</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-emerald-600 transition-transform duration-200 ${
+                        isInstrumentRatingOpen ? 'transform rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  {isInstrumentRatingOpen && (
+                    <div className="px-4 py-3 space-y-2 border-t border-gray-200 bg-gray-50">
+                      <button
+                        onClick={() => handleScheduleClick('ir-airplane')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">Instrument Rating Airplane</span>
+                        <span className="text-xl font-bold text-emerald-600">$950</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Commercial Pilot Certificate */}
+                <div className="mb-4 border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setIsCommercialPilotOpen(!isCommercialPilotOpen)}
+                    className="w-full flex items-center justify-between text-left px-4 py-3 bg-white hover:bg-emerald-100 rounded-lg transition-colors"
+                  >
+                    <span className="font-bold text-emerald-700 hover:text-emerald-900 text-lg">Commercial Pilot Certificate</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-emerald-600 transition-transform duration-200 ${
+                        isCommercialPilotOpen ? 'transform rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  {isCommercialPilotOpen && (
+                    <div className="px-4 py-3 space-y-2 border-t border-gray-200 bg-gray-50">
+                      <button
+                        onClick={() => handleScheduleClick('cp-initial-asel')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">INITIAL Commercial Pilot - Airplane Single Engine Land (ASEL)</span>
+                        <span className="text-xl font-bold text-emerald-600">$1,000</span>
+                      </button>
+                      <button
+                        onClick={() => handleScheduleClick('cp-initial-amel')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">INITIAL Commercial Pilot - Airplane Multiengine Land (AMEL)</span>
+                        <span className="text-xl font-bold text-emerald-600">$1,100</span>
+                      </button>
+                      <button
+                        onClick={() => handleScheduleClick('cp-added-class')}
+                        className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
+                      >
+                        <span className="text-gray-700">Added Class Rating - ASEL or AMEL</span>
+                        <span className="text-xl font-bold text-emerald-600">$850</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Breakdown of Fees Dropdown */}
-                <div className="mt-6 mb-6 border-t border-gray-200 pt-4">
+                <div className="mt-6 mb-6 border border-gray-300 rounded-lg">
                   <button
                     onClick={() => setIsFeesOpen(!isFeesOpen)}
                     className="w-full flex items-center justify-between text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
@@ -127,7 +237,12 @@ export function HomePage() {
                     <div className="mt-4 px-4 py-4 bg-blue-50 border-l-4 border-blue-400 rounded">
                       <div className="space-y-4">
                         <div>
-                          <h5 className="font-semibold text-gray-800 mb-2">Retest Fee - 50%</h5>
+                          <h5 className="font-semibold text-gray-800 mb-2">Retest Fees</h5>
+                          <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
+                            <li>$500 if only the Flight Portion is required</li>
+                            <li>$750 if both the Ground and Flight Portion are required</li>
+                            <li>The full exam fee applies if more than 60 days has passed since the original unsatisfactory test</li>
+                          </ul>
                         </div>
                         
                         <div>
@@ -165,9 +280,6 @@ export function HomePage() {
                     See Availability
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm mt-6 text-center">
-                  **Additional Authorizations coming soon.**
-                </p>
               </div>
             </div>
           </div>
@@ -211,7 +323,7 @@ export function HomePage() {
                         </li>
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                          <span><strong>Processing Fee: $250</strong></span>
+                          <span><strong>Processing Fee: $400</strong></span>
                         </li>
                       </ul>
                       <p className="text-sm mt-4">
@@ -336,11 +448,11 @@ export function HomePage() {
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>SIC Type Ratings</span>
+                          <span>SIC Type Ratings ($250)</span>
                         </li>
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>SOE Limitation Removals</span>
+                          <span>SOE Limitation Removals ($250)</span>
                         </li>
                         <li className="flex items-start ml-6">
                           <Plane className="w-3 h-3 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />

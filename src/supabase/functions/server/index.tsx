@@ -163,17 +163,39 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (resendApiKey) {
     try {
-      const appointmentDate = new Date(booking.selectedDate + 'T00:00:00');
-      const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+      const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
       
-      const serviceTypeLabel = booking.serviceType === 'checkride' 
-        ? 'Private Pilot ASEL Checkride ($850)' 
-        : booking.serviceType.charAt(0).toUpperCase() + booking.serviceType.slice(1);
+      const serviceTypeLabels: { [key: string]: string } = {
+        'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
+        'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
+        'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+        'ir-airplane': 'Instrument Rating Airplane ($950)',
+        'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
+        'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
+        'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+        'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
+        'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
+        'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
+        'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
+        'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
+        'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
+        'foreign': 'Foreign Pilot ($400)',
+        'military': 'Military Competency ($250)',
+        'cfi-renewal': 'Flight Instructor Renewal ($150)',
+        'ground-instructor': 'Ground Instructor ($150)',
+        'remote': 'Remote Pilot Certificate ($150)',
+        'sic': 'SIC Type Ratings ($250)',
+        'soe': 'SOE Limitation Removals ($250)',
+        'atp': 'ATP Limitation Removals ($150)',
+        'night': 'Night Flight Limitation Removals ($150)'
+      };
+      
+      const serviceTypeLabel = serviceTypeLabels[booking.serviceType] || booking.serviceType;
       
       const dpeEmailHtml = `
         <h2>🔔 New Appointment Request</h2>
@@ -423,13 +445,39 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     
     if (resendApiKey) {
       try {
-        const appointmentDate = new Date(updatedBooking.selectedDate + 'T00:00:00');
-        const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+        const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
           day: 'numeric'
         });
+        
+        const serviceTypeLabels: { [key: string]: string } = {
+          'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
+          'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
+          'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+          'ir-airplane': 'Instrument Rating Airplane ($950)',
+          'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
+          'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
+          'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+          'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
+          'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
+          'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
+          'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
+          'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
+          'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
+          'foreign': 'Foreign Pilot ($400)',
+          'military': 'Military Competency ($250)',
+          'cfi-renewal': 'Flight Instructor Renewal ($150)',
+          'ground-instructor': 'Ground Instructor ($150)',
+          'remote': 'Remote Pilot Certificate ($150)',
+          'sic': 'SIC Type Ratings ($250)',
+          'soe': 'SOE Limitation Removals ($250)',
+          'atp': 'ATP Limitation Removals ($150)',
+          'night': 'Night Flight Limitation Removals ($150)'
+        };
+        
+        const serviceTypeLabel = serviceTypeLabels[updatedBooking.serviceType] || updatedBooking.serviceType;
         
         const confirmationEmailHtml = `
           <p>Dear ${updatedBooking.name},</p>
@@ -613,8 +661,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     // Send cancellation email to applicant
     if (resendApiKey) {
       try {
-        const appointmentDate = new Date(updatedBooking.selectedDate + 'T00:00:00');
-        const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+        const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -752,8 +799,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
     }
     
     // Format the date
-    const appointmentDate = new Date(booking.selectedDate + 'T00:00:00');
-    const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+    const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Calendar, Clock, CheckCircle, AlertCircle, ArrowDown } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { useSearchParams } from 'react-router';
 
 interface BookingFormData {
   name: string;
@@ -19,7 +20,28 @@ interface BusyTime {
   summary: string;
 }
 
+// Service type with duration mapping
+const SERVICE_DURATIONS: { [key: string]: number } = {
+  'pp-initial-asel': 6,
+  'pp-initial-amel': 6,
+  'pp-added-class': 4,
+  'ir-airplane': 6,
+  'cp-initial-asel': 6,
+  'cp-initial-amel': 6,
+  'cp-added-class': 4,
+  'foreign': 1,
+  'military': 1,
+  'cfi-renewal': 1,
+  'ground-instructor': 1,
+  'sic': 1,
+  'soe': 1,
+  'atp': 1,
+  'remote': 1,
+  'night': 1,
+};
+
 export function SchedulePage() {
+  const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showAllDates, setShowAllDates] = useState(false);
@@ -29,7 +51,7 @@ export function SchedulePage() {
     phone: '',
     iacraFtn: '',
     aircraftMakeModel: '',
-    serviceType: 'checkride',
+    serviceType: '',
     selectedDate: '',
     selectedTime: '',
   });
@@ -39,6 +61,23 @@ export function SchedulePage() {
   const [error, setError] = useState<string>('');
   const [busyTimes, setBusyTimes] = useState<BusyTime[]>([]);
   const [loadingCalendar, setLoadingCalendar] = useState(true);
+
+  // Refs for auto-scrolling
+  const dateSelectionRef = useRef<HTMLDivElement>(null);
+  const timeSelectionRef = useRef<HTMLDivElement>(null);
+  const bookingFormRef = useRef<HTMLDivElement>(null);
+
+  // Pre-fill service type from URL parameter
+  useEffect(() => {
+    const serviceParam = searchParams.get('service');
+    if (serviceParam && SERVICE_DURATIONS[serviceParam]) {
+      setFormData(prev => ({ ...prev, serviceType: serviceParam }));
+      // Auto-scroll to date selection after a brief delay
+      setTimeout(() => {
+        dateSelectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
+    }
+  }, [searchParams]);
 
   // Fetch busy times from Google Calendar on component mount
   useEffect(() => {
@@ -72,45 +111,91 @@ export function SchedulePage() {
     }
   };
 
-  // Check if a date is busy based on Google Calendar events
-  const isDateBusy = (dateStr: string): boolean => {
-    // Parse the date string as local date (YYYY-MM-DD format)
+  // Check if a date has ANY available time slots for the given duration
+  const hasAvailableSlots = (dateStr: string, duration: number): boolean => {
+    // Check if there's an all-day event on this date
     const [year, month, day] = dateStr.split('-').map(Number);
     const checkDate = new Date(year, month - 1, day);
     const checkDateOnly = checkDate.getTime();
     
-    return busyTimes.some(busyTime => {
-      // Handle both all-day events (date format) and timed events (dateTime format)
-      let busyStart: Date;
-      let busyEnd: Date;
-      
-      if (busyTime.start.includes('T')) {
-        // Timed event - has dateTime
-        busyStart = new Date(busyTime.start);
-      } else {
-        // All-day event - date only (e.g., "2026-02-17")
+    const hasAllDayEvent = busyTimes.some(busyTime => {
+      if (!busyTime.start.includes('T')) {
+        // All-day event
         const [y, m, d] = busyTime.start.split('-').map(Number);
-        busyStart = new Date(y, m - 1, d);
+        const busyStart = new Date(y, m - 1, d);
+        
+        const [ye, me, de] = busyTime.end.split('-').map(Number);
+        const busyEnd = new Date(ye, me - 1, de - 1);
+        
+        const busyStartDateOnly = new Date(busyStart.getFullYear(), busyStart.getMonth(), busyStart.getDate()).getTime();
+        const busyEndDateOnly = new Date(busyEnd.getFullYear(), busyEnd.getMonth(), busyEnd.getDate()).getTime();
+        
+        return checkDateOnly >= busyStartDateOnly && checkDateOnly <= busyEndDateOnly;
       }
-      
-      if (busyTime.end.includes('T')) {
-        // Timed event - has dateTime
-        busyEnd = new Date(busyTime.end);
-      } else {
-        // All-day event - date only
-        // For all-day events, Google Calendar sets end date to the next day
-        // So we need to subtract 1 day to get the actual last day of the event
-        const [y, m, d] = busyTime.end.split('-').map(Number);
-        busyEnd = new Date(y, m - 1, d - 1);
-      }
-      
-      // Get just the date parts (without time) for comparison
-      const busyStartDateOnly = new Date(busyStart.getFullYear(), busyStart.getMonth(), busyStart.getDate()).getTime();
-      const busyEndDateOnly = new Date(busyEnd.getFullYear(), busyEnd.getMonth(), busyEnd.getDate()).getTime();
-      
-      // Check if the date falls within the busy period (inclusive)
-      return checkDateOnly >= busyStartDateOnly && checkDateOnly <= busyEndDateOnly;
+      return false;
     });
+    
+    // If there's an all-day event, no slots are available
+    if (hasAllDayEvent) {
+      return false;
+    }
+    
+    // Generate all possible time slots for this duration and check if any are available
+    const possibleSlots = generateTimeSlots(duration);
+    return possibleSlots.some(slot => isTimeSlotAvailable(dateStr, slot.start, duration));
+  };
+
+  // Check if a specific time slot is available (not conflicting with busy times)
+  const isTimeSlotAvailable = (dateStr: string, startHour: number, durationHours: number): boolean => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const slotStart = new Date(year, month - 1, day, startHour, 0, 0);
+    const slotEnd = new Date(year, month - 1, day, startHour + durationHours, 0, 0);
+    
+    // Check if this slot conflicts with any busy time
+    return !busyTimes.some(busyTime => {
+      // Skip all-day events - only check timed events for slot conflicts
+      if (!busyTime.start.includes('T')) {
+        return false;
+      }
+      
+      const busyStart = new Date(busyTime.start);
+      const busyEnd = new Date(busyTime.end);
+      
+      // Check if there's any overlap between slot and busy time
+      // Overlap occurs if: slot starts before busy ends AND slot ends after busy starts
+      return slotStart < busyEnd && slotEnd > busyStart;
+    });
+  };
+
+  // Generate available time slots based on service duration
+  const generateTimeSlots = (duration: number): Array<{start: number, end: number, label: string}> => {
+    if (duration === 6) {
+      return [
+        { start: 9, end: 15, label: '9:00 AM - 3:00 PM' },
+        { start: 10, end: 16, label: '10:00 AM - 4:00 PM' },
+        { start: 11, end: 17, label: '11:00 AM - 5:00 PM' },
+      ];
+    } else if (duration === 4) {
+      return [
+        { start: 9, end: 13, label: '9:00 AM - 1:00 PM' },
+        { start: 10, end: 14, label: '10:00 AM - 2:00 PM' },
+        { start: 11, end: 15, label: '11:00 AM - 3:00 PM' },
+        { start: 12, end: 16, label: '12:00 PM - 4:00 PM' },
+        { start: 13, end: 17, label: '1:00 PM - 5:00 PM' },
+      ];
+    } else if (duration === 1) {
+      return [
+        { start: 9, end: 10, label: '9:00 AM - 10:00 AM' },
+        { start: 10, end: 11, label: '10:00 AM - 11:00 AM' },
+        { start: 11, end: 12, label: '11:00 AM - 12:00 PM' },
+        { start: 12, end: 13, label: '12:00 PM - 1:00 PM' },
+        { start: 13, end: 14, label: '1:00 PM - 2:00 PM' },
+        { start: 14, end: 15, label: '2:00 PM - 3:00 PM' },
+        { start: 15, end: 16, label: '3:00 PM - 4:00 PM' },
+        { start: 16, end: 17, label: '4:00 PM - 5:00 PM' },
+      ];
+    }
+    return [];
   };
 
   // Generate available dates (exclude weekends)
@@ -139,23 +224,72 @@ export function SchedulePage() {
   const appointmentDuration = '6 hours (9:00 AM - 3:00 PM)';
 
   const handleDateSelect = (date: string) => {
-    if (isDateBusy(date)) {
+    if (!hasAvailableSlots(date, SERVICE_DURATIONS[formData.serviceType])) {
       return; // Don't allow selection of busy dates
     }
     setSelectedDate(date);
-    setSelectedTime(appointmentTime);
-    setFormData({ ...formData, selectedDate: date, selectedTime: appointmentTime });
+    setSelectedTime(''); // Reset time when date changes
+    setFormData({ ...formData, selectedDate: date, selectedTime: '' });
+    
+    // Auto-scroll to time selection when date is selected
+    setTimeout(() => {
+      timeSelectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleTimeSelect = (timeLabel: string) => {
+    setSelectedTime(timeLabel);
+    setFormData({ ...formData, selectedTime: timeLabel });
+    
+    // Auto-scroll to booking form when time is selected
+    setTimeout(() => {
+      bookingFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Auto-scroll to date selection when service type is selected
+    if (name === 'serviceType' && value) {
+      setTimeout(() => {
+        dateSelectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const generateGoogleCalendarUrl = (data: BookingFormData) => {
+    // Get the duration for this service type
+    const duration = SERVICE_DURATIONS[data.serviceType] || 6;
+    
+    // Parse the selected time to extract start hour
+    // Format is like "9:00 AM - 3:00 PM" or "10:00 AM - 4:00 PM"
+    const timeMatch = data.selectedTime.match(/(\d{1,2}):00 (AM|PM)/);
+    let startHour = 9; // default to 9 AM
+    
+    if (timeMatch) {
+      const hour = parseInt(timeMatch[1]);
+      const meridiem = timeMatch[2];
+      
+      if (meridiem === 'PM' && hour !== 12) {
+        startHour = hour + 12;
+      } else if (meridiem === 'AM' && hour === 12) {
+        startHour = 0;
+      } else {
+        startHour = hour;
+      }
+    }
+    
     // Parse the date and create start/end times
     const [year, month, day] = data.selectedDate.split('-');
-    const startDateTime = `${year}${month}${day}T090000`; // 9:00 AM
-    const endDateTime = `${year}${month}${day}T150000`; // 3:00 PM (6 hours later)
+    const startHourStr = startHour.toString().padStart(2, '0');
+    const startDateTime = `${year}${month}${day}T${startHourStr}0000`;
+    
+    // Calculate end time based on duration
+    const endHour = startHour + duration;
+    const endHourStr = endHour.toString().padStart(2, '0');
+    const endDateTime = `${year}${month}${day}T${endHourStr}0000`;
     
     const serviceTypeLabel = data.serviceType === 'checkride' 
       ? 'Private Pilot ASEL Checkride' 
@@ -261,90 +395,177 @@ export function SchedulePage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <Calendar className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold mb-4">Schedule Your Checkride</h1>
+          <h1 className="text-4xl font-bold mb-4">Schedule Your Appointment</h1>
           <p className="text-gray-600">
-            Select an available date and time, then complete the booking form below.
+            First select your service type, then choose an available date and complete the booking form.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          {/* Calendar Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Select a Date</h2>
-            {loadingCalendar && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-blue-800">Loading calendar availability...</span>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              {availableDates.map((date) => {
-                const isBusy = isDateBusy(date);
-                const isSelected = selectedDate === date;
-                return (
-                  <button
-                    key={date}
-                    onClick={() => !isBusy && handleDateSelect(date)}
-                    disabled={isBusy}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
-                        : isBusy
-                        ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
-                    }`}
-                  >
-                    <div className="text-sm font-semibold">{formatDate(date)}</div>
-                    <div className="text-xs text-gray-600 mt-1">{formatDateShort(date)}</div>
-                    {isBusy && <div className="text-xs text-red-500 mt-1">Unavailable</div>}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              className="mt-4 w-full text-emerald-600 hover:text-emerald-700 font-semibold py-2 underline"
-              onClick={() => setShowAllDates(!showAllDates)}
-            >
-              {showAllDates ? 'Show fewer dates' : 'Show more dates'}
-            </button>
+        {/* Service Type Selection - STEP 1 */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>
+            <h2 className="text-2xl font-semibold">Select Service Type</h2>
           </div>
-
-          {/* Time Selection */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 flex items-center">
-              <Clock className="w-6 h-6 mr-2 text-emerald-600" />
-              Appointment Time
-            </h2>
-            {!selectedDate ? (
-              <p className="text-gray-500 italic">Please select a date first</p>
-            ) : (
-              <div>
-                <div className="bg-emerald-50 border-2 border-emerald-600 rounded-lg p-6 text-center">
-                  <div className="text-2xl font-bold text-emerald-900 mb-2">{appointmentTime}</div>
-                  <div className="text-gray-700">{appointmentDuration}</div>
-                  <div className="mt-4 text-sm text-gray-600">
-                    All checkrides start at 9:00 AM and last approximately 6 hours
-                  </div>
-                </div>
-                <div className="flex justify-center mt-6">
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className="w-12 h-12 text-emerald-600 animate-bounce" />
-                    <span className="text-sm text-emerald-600 font-semibold mt-4">Complete booking form below</span>
-                  </div>
-                </div>
+          <div className="max-w-2xl">
+            <label htmlFor="serviceType-main" className="block font-semibold mb-2">
+              What service do you need? <span className="text-red-600">*</span>
+            </label>
+            <select
+              id="serviceType-main"
+              name="serviceType"
+              required
+              value={formData.serviceType}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="">Select a service...</option>
+              <optgroup label="Private Pilot Certificate">
+                <option value="pp-initial-asel">INITIAL Private Pilot - ASEL ($950) - 6 hours</option>
+                <option value="pp-initial-amel">INITIAL Private Pilot - AMEL ($1,000) - 6 hours</option>
+                <option value="pp-added-class">Added Class Rating - ASEL or AMEL ($850) - 4 hours</option>
+              </optgroup>
+              <optgroup label="Instrument Rating">
+                <option value="ir-airplane">Instrument Rating Airplane ($950) - 6 hours</option>
+              </optgroup>
+              <optgroup label="Commercial Pilot Certificate">
+                <option value="cp-initial-asel">INITIAL Commercial Pilot - ASEL ($1,000) - 6 hours</option>
+                <option value="cp-initial-amel">INITIAL Commercial Pilot - AMEL ($1,100) - 6 hours</option>
+                <option value="cp-added-class">Added Class Rating - ASEL or AMEL ($850) - 4 hours</option>
+              </optgroup>
+              <optgroup label="Administrative Functions">
+                <option value="foreign">Foreign Pilot ($400) - 1 hour</option>
+                <option value="military">Military Competency ($250) - 1 hour</option>
+                <option value="cfi-renewal">Flight Instructor Renewal ($150) - 1 hour</option>
+                <option value="ground-instructor">Ground Instructor ($150) - 1 hour</option>
+                <option value="sic">SIC Type Ratings ($250) - 1 hour</option>
+                <option value="soe">SOE Limitation Removals ($250) - 1 hour</option>
+                <option value="atp">ATP Limitation Removals ($150) - 1 hour</option>
+                <option value="remote">Remote Pilot Certificate ($150) - 1 hour</option>
+                <option value="night">Night Flight Limitation Removals ($150) - 1 hour</option>
+              </optgroup>
+            </select>
+            {formData.serviceType && (
+              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-emerald-800 font-semibold">
+                  ✓ Service selected: {SERVICE_DURATIONS[formData.serviceType]} hour appointment
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Booking Form */}
-        {selectedDate && selectedTime && (
-          <div className="bg-white border border-gray-200 rounded-lg p-8">
-            <h2 className="text-2xl font-semibold mb-6">Complete Your Booking</h2>
+        {/* Date and Time Selection - STEP 2 */}
+        {formData.serviceType && (
+          <div ref={dateSelectionRef} className="grid lg:grid-cols-2 gap-8 mb-12" style={{ scrollMarginTop: '2rem' }}>
+            {/* Calendar Section */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
+                <h2 className="text-2xl font-semibold">Select a Date</h2>
+              </div>
+              {loadingCalendar && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">Loading calendar availability...</span>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                {availableDates.map((date) => {
+                  const isBusy = !hasAvailableSlots(date, SERVICE_DURATIONS[formData.serviceType]);
+                  const isSelected = selectedDate === date;
+                  return (
+                    <button
+                      key={date}
+                      onClick={() => !isBusy && handleDateSelect(date)}
+                      disabled={isBusy}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
+                          : isBusy
+                          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{formatDate(date)}</div>
+                      <div className="text-xs text-gray-600 mt-1">{formatDateShort(date)}</div>
+                      {isBusy && <div className="text-xs text-red-500 mt-1">Unavailable</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                className="mt-4 w-full text-emerald-600 hover:text-emerald-700 font-semibold py-2 underline"
+                onClick={() => setShowAllDates(!showAllDates)}
+              >
+                {showAllDates ? 'Show fewer dates' : 'Show more dates'}
+              </button>
+            </div>
+
+            {/* Time Selection */}
+            <div ref={timeSelectionRef} className="bg-white border border-gray-200 rounded-lg p-6" style={{ scrollMarginTop: '2rem' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</div>
+                <h2 className="text-2xl font-semibold">Select Time</h2>
+              </div>
+              {!selectedDate ? (
+                <p className="text-gray-500 italic">Please select a date first</p>
+              ) : (
+                <div>
+                  <p className="text-sm text-gray-600 mb-4">Choose your preferred time slot:</p>
+                  <div className="space-y-3">
+                    {generateTimeSlots(SERVICE_DURATIONS[formData.serviceType]).map((slot) => {
+                      const isAvailable = isTimeSlotAvailable(selectedDate, slot.start, SERVICE_DURATIONS[formData.serviceType]);
+                      const isSelected = selectedTime === slot.label;
+                      
+                      return (
+                        <button
+                          key={slot.label}
+                          onClick={() => isAvailable && handleTimeSelect(slot.label)}
+                          disabled={!isAvailable}
+                          className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold'
+                              : !isAvailable
+                              ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg">{slot.label}</span>
+                            {!isAvailable && <span className="text-xs text-red-500">Unavailable</span>}
+                            {isSelected && <span className="text-emerald-600 text-lg">✓</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedTime && (
+                    <div className="flex justify-center mt-6">
+                      <div className="flex flex-col items-center">
+                        <ArrowDown className="w-12 h-12 text-emerald-600 animate-bounce" />
+                        <span className="text-sm text-emerald-600 font-semibold mt-4">Complete booking form below</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Booking Form - STEP 4 */}
+        {selectedDate && selectedTime && formData.serviceType && (
+          <div ref={bookingFormRef} className="bg-white border border-gray-200 rounded-lg p-8" style={{ scrollMarginTop: '2rem' }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">4</div>
+              <h2 className="text-2xl font-semibold">Complete Your Booking</h2>
+            </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-blue-900">
-                <strong>Selected:</strong> {formatDate(selectedDate)} at {selectedTime}
+                <strong>Selected:</strong> {formatDate(selectedDate)} at {selectedTime} ({SERVICE_DURATIONS[formData.serviceType]} hour{SERVICE_DURATIONS[formData.serviceType] > 1 ? 's' : ''})
               </p>
             </div>
 
@@ -420,7 +641,7 @@ export function SchedulePage() {
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label htmlFor="aircraftMakeModel" className="block font-semibold mb-2">
                     Aircraft Make & Model <span className="text-red-600">*</span>
                   </label>
@@ -434,31 +655,6 @@ export function SchedulePage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Cessna 172"
                   />
-                </div>
-
-                <div>
-                  <label htmlFor="serviceType" className="block font-semibold mb-2">
-                    Service Type <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    id="serviceType"
-                    name="serviceType"
-                    required
-                    value={formData.serviceType}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="checkride">Checkride - Private Pilot ASEL ($850)</option>
-                    <option value="foreign">Foreign Pilot ($250)</option>
-                    <option value="military">Military Competency ($250)</option>
-                    <option value="cfi-renewal">Flight Instructor Renewal ($150)</option>
-                    <option value="ground-instructor">Ground Instructor ($150)</option>
-                    <option value="sic">SIC Type Ratings ($150)</option>
-                    <option value="soe">SOE Limitation Removals ($150)</option>
-                    <option value="atp">ATP Limitation Removals ($150)</option>
-                    <option value="remote">Remote Pilot Certificate ($150)</option>
-                    <option value="night">Night Flight Limitation Removals ($150)</option>
-                  </select>
                 </div>
               </div>
 

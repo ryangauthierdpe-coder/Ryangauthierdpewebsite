@@ -45,7 +45,7 @@ export function DebriefDigestPage() {
         {/* Main Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-center text-gray-900">Ryan's Debrief Digest</h2>
-          <p className="text-sm text-center text-gray-600 mt-2">(Updated January 2026)</p>
+          <p className="text-sm text-center text-gray-600 mt-2">(Updated March 2026)</p>
         </div>
 
         {/* Section 1: Qualifying the Applicant */}
@@ -95,6 +95,46 @@ export function DebriefDigestPage() {
                 </li>
               </ul>
             </div>
+
+            {/* Supplemental Type Certificate (STC) */}
+            <div className="bg-white border-l-4 border-amber-500 rounded-r-lg p-6 shadow">
+              <h4 className="text-xl font-bold text-amber-900 mb-4">Supplemental Type Certificate (STC)</h4>
+              <p className="text-gray-800 mb-4">
+                If the aircraft has any STC's, it may affect aircraft operation, performance, or limitations, the AFM/POH must contain the Flight Manual Supplement (FMS).
+              </p>
+              
+              <div className="mb-4">
+                <p className="font-semibold text-gray-800 mb-2">Common issues:</p>
+                <ul className="space-y-2 ml-4">
+                  <li className="flex items-start">
+                    <span className="text-amber-600 mr-3 font-bold text-lg">•</span>
+                    <span className="text-gray-800">Missing AFM supplement</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-600 mr-3 font-bold text-lg">•</span>
+                    <span className="text-gray-800">Old weight & balance not reflecting changes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-600 mr-3 font-bold text-lg">•</span>
+                    <span className="text-gray-800">Applicants unaware equipment is installed via STC</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-600 mr-3 font-bold text-lg">•</span>
+                    <span className="text-gray-800">Placards missing</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-600 mr-3 font-bold text-lg">•</span>
+                    <span className="text-gray-800">POH supplements stuffed loose instead of incorporated</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded p-4">
+                <p className="text-gray-800 font-bold">
+                  If a modification changes how the aircraft is operated, the AFM supplement must be in the POH and the applicant should know it.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -116,7 +156,8 @@ export function DebriefDigestPage() {
               {/* Inoperative Equipment */}
               <div className="border-l-4 border-blue-500 pl-4">
                 <h4 className="text-lg font-bold text-blue-900 mb-2">Inoperative Equipment</h4>
-                <p className="text-gray-800 font-bold">Appropriate procedures for operating with inoperative equipment and the requirements of <strong>§ 91.213</strong>. Pilot-performed preventive maintenance.</p>
+                <p className="text-gray-800 font-bold">Appropriate procedures for operating with inoperative equipment and the requirements of <strong>§ 91.213</strong>.</p>
+                <p className="text-gray-800 font-bold mt-2">Pilot-performed preventive maintenance.</p>
               </div>
 
               {/* Navigation */}

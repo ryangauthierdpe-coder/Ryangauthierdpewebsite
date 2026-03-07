@@ -115,15 +115,28 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
   const getServiceTypeLabel = (serviceType: string) => {
     const labels: { [key: string]: string } = {
-      'checkride': 'Private Pilot ASEL Checkride ($850)',
-      'foreign': 'Foreign Pilot Examiner ($250)',
-      'military': 'Military Competency Examiner ($250)',
-      'cfi-renewal': 'Flight Instructor Renewal ($250)',
-      'remote': 'Remote Pilot Examiner ($250)',
+      'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
+      'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
+      'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+      'ir-airplane': 'Instrument Rating Airplane ($950)',
+      'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
+      'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
+      'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+      'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
+      'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
+      'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
+      'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
+      'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
+      'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
+      'foreign': 'Foreign Pilot ($400)',
+      'military': 'Military Competency ($250)',
+      'cfi-renewal': 'Flight Instructor Renewal ($150)',
+      'ground-instructor': 'Ground Instructor ($150)',
+      'remote': 'Remote Pilot Certificate ($150)',
       'sic': 'SIC Type Ratings ($250)',
       'soe': 'SOE Limitation Removals ($250)',
-      'atp': 'ATP Limitation Removals ($250)',
-      'night': 'Night Flight Limitation Removals ($250)'
+      'atp': 'ATP Limitation Removals ($150)',
+      'night': 'Night Flight Limitation Removals ($150)'
     };
     return labels[serviceType] || serviceType;
   };
