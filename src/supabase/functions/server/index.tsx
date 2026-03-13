@@ -163,6 +163,8 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (resendApiKey) {
     try {
+      console.log('📧 Attempting to send notification email to DPE...');
+      
       const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -246,9 +248,42 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
         console.log('✅ Notification email sent to DPE for booking:', bookingId, 'Email ID:', emailResult.id);
       } else {
         console.error('❌ Failed to send notification email to DPE. Response:', emailResult);
+        console.error('❌ Status:', response.status);
+        console.error('❌ Full error details:', JSON.stringify(emailResult, null, 2));
+        
+        // If domain verification error, try fallback with resend.dev
+        if (emailResult.statusCode === 403 && emailResult.message?.includes('not verified')) {
+          console.log('⚠️  Attempting fallback with resend.dev domain...');
+          try {
+            const fallbackResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'DPE Booking System <noreply@resend.dev>',
+                to: ['ryangauthierdpe@gmail.com'],
+                subject: `🔔 New Appointment Request - ${booking.name} on ${formattedDate}`,
+                html: dpeEmailHtml,
+              }),
+            });
+            
+            const fallbackResult = await fallbackResponse.json();
+            
+            if (fallbackResponse.ok) {
+              console.log('✅ Notification email sent via fallback for booking:', bookingId, 'Email ID:', fallbackResult.id);
+            } else {
+              console.error('❌ Fallback notification email also failed:', fallbackResult);
+            }
+          } catch (fallbackError) {
+            console.error('❌ Error sending fallback notification email:', fallbackError);
+          }
+        }
       }
     } catch (emailError) {
       console.error('❌ Error sending notification email to DPE:', emailError);
+      console.error('❌ Error details:', emailError instanceof Error ? emailError.message : String(emailError));
       // Don't fail the booking if email fails
     }
   } else {
