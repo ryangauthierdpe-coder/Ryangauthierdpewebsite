@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw } from 'lucide-react';
+import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { ConfirmBookingModal } from './confirm-booking-modal';
 
@@ -119,13 +119,13 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
   const getServiceTypeLabel = (serviceType: string) => {
     const labels: { [key: string]: string } = {
-      'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
-      'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
-      'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
-      'ir-airplane': 'Instrument Rating Airplane ($950)',
-      'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
-      'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
-      'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+      'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a) ($950)',
+      'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b) ($1,000)',
+      'pp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
+      'ir-airplane': 'Instrument Rating Airplane - §61.65 ($950)',
+      'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
+      'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
+      'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
       'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
       'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
       'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
@@ -653,6 +653,16 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
                           {/* Action Buttons */}
                           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                            <button
+                              onClick={() => {
+                                setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime });
+                                setConfirmModalOpen(true);
+                              }}
+                              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                            >
+                              <Edit className="w-4 h-4" />
+                              Edit Date/Time/Location
+                            </button>
                             <div className="flex items-center gap-2">
                               <label className="text-sm font-semibold text-gray-600">Update Status:</label>
                               <select

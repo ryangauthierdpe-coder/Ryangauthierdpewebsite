@@ -173,13 +173,13 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
       });
       
       const serviceTypeLabels: { [key: string]: string } = {
-        'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
-        'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
-        'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
-        'ir-airplane': 'Instrument Rating Airplane ($950)',
-        'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
-        'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
-        'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+        'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a) ($950)',
+        'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b) ($1,000)',
+        'pp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
+        'ir-airplane': 'Instrument Rating Airplane - §61.65 ($950)',
+        'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
+        'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
+        'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
         'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
         'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
         'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
@@ -491,13 +491,13 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         });
         
         const serviceTypeLabels: { [key: string]: string } = {
-          'pp-initial-asel': 'INITIAL Private Pilot - ASEL ($950)',
-          'pp-initial-amel': 'INITIAL Private Pilot - AMEL ($1,000)',
-          'pp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
-          'ir-airplane': 'Instrument Rating Airplane ($950)',
-          'cp-initial-asel': 'INITIAL Commercial Pilot - ASEL ($1,000)',
-          'cp-initial-amel': 'INITIAL Commercial Pilot - AMEL ($1,100)',
-          'cp-added-class': 'Added Class Rating - ASEL or AMEL ($850)',
+          'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a) ($950)',
+          'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b) ($1,000)',
+          'pp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
+          'ir-airplane': 'Instrument Rating Airplane - §61.65 ($950)',
+          'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
+          'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
+          'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
           'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
           'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
           'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
