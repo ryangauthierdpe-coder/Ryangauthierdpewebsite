@@ -16,23 +16,6 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [selectedTime, setSelectedTime] = useState(currentTime);
 
-  // Update state when the modal opens with new values
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedDate(currentDate);
-      setSelectedTime(currentTime);
-      setLocation(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
-    }
-  }, [isOpen, currentDate, currentTime, currentLocation]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onConfirm(location, selectedDate, selectedTime);
-    onClose();
-  };
-
   // Generate time options from 6:00 AM to 8:00 PM in 30-minute increments
   const timeOptions = [];
   for (let hour = 6; hour <= 20; hour++) {
@@ -44,6 +27,28 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
       timeOptions.push(`${displayHour}:${displayMinute} ${period}`);
     }
   }
+
+  // Update state when the modal opens with new values
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedDate(currentDate);
+      // Ensure the time matches one of the available options
+      const normalizedTime = currentTime || '6:00 AM';
+      setSelectedTime(normalizedTime);
+      setLocation(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
+      
+      // Debug log to check values
+      console.log('Modal opened with:', { currentDate, currentTime, normalizedTime, currentLocation });
+    }
+  }, [isOpen, currentDate, currentTime, currentLocation]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onConfirm(location, selectedDate, selectedTime);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
