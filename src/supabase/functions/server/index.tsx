@@ -547,11 +547,6 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
           
-          <h3>PRACTICAL TEST BRIEFING:</h3>
-          <p>Please expect to receive a Practical Test Briefing approximately two weeks prior to your scheduled examination date. If you have not received the briefing at least 10 days before your test, please contact me so I can ensure it is sent to you promptly.</p>
-          
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
-          
           <h3>WHAT TO PREPARE:</h3>
           <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
           
@@ -848,10 +843,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
         <strong>Location:</strong> Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891
       </p>
       
-      <h3>FLYING IN:</h3>
-      <p>When you land at WST on the day of your practical test, we will meet in the Main Terminal building. There are parking spots in the middle of the ramp, marked with a T, where you can park facing the terminal. As you walk towards the terminal, you'll enter through the door to the left with a sign for General Aviation. There is a conference room there where we will meet. A map is available under the Preparation Tab on my website (www.DPERyan.com)</p>
-      
-      <h3>WHAT TO BRING:</h3>
+      <h3>WHAT TO PREPARE:</h3>
       <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
       
       <h3>WEATHER:</h3>
