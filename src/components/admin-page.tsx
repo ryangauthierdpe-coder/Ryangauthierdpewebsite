@@ -655,6 +655,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                             <button
                               onClick={() => {
+                                console.log('Opening modal with booking data:', {
+                                  date: booking.selectedDate,
+                                  time: booking.selectedTime,
+                                  location: booking.location
+                                });
                                 setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location });
                                 setConfirmModalOpen(true);
                               }}
