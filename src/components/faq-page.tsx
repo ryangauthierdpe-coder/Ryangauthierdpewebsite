@@ -312,7 +312,7 @@ export function FAQPage() {
         {
           question: "What is the test cancellation fee?",
           answer: [
-            "A $250 cancellation fee will apply if a scheduled practical test must be cancelled due to any of the following:",
+            "A $200 cancellation fee will apply if a scheduled practical test must be cancelled due to any of the following:",
             "",
             "• Missing or incomplete training documentation",
             "• Training requirements not satisfied",

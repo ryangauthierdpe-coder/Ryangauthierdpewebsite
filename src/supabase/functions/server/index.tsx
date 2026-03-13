@@ -339,7 +339,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   const bookingId = c.req.param('id');
-  const { status } = parseResult.data;
+  const { status, location, selectedDate, selectedTime } = parseResult.data;
   
   // Validate status
   const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -353,16 +353,19 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     return c.json({ error: 'Booking not found' }, 404);
   }
   
-  // Update booking with new status
+  // Update booking with new status and optionally location, date, and time
   const updatedBooking = {
     ...existingBooking,
     status,
+    ...(location && { location }),
+    ...(selectedDate && { selectedDate }),
+    ...(selectedTime && { selectedTime }),
     updatedAt: new Date().toISOString()
   };
   
   await kv.set(bookingId, updatedBooking);
   
-  console.log(`Booking ${bookingId} status updated to: ${status}`);
+  console.log(`Booking ${bookingId} status updated to: ${status}${location ? ` with location: ${location}` : ''}${selectedDate ? ` on date: ${selectedDate}` : ''}${selectedTime ? ` at time: ${selectedTime}` : ''}`);
   
   // Send automatic confirmation email to customer if status is "confirmed"
   if (status === 'confirmed') {
@@ -514,6 +517,9 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         
         const serviceTypeLabel = serviceTypeLabels[updatedBooking.serviceType] || updatedBooking.serviceType;
         
+        // Use custom location if provided, otherwise default to Westerly State Airport
+        const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
+        
         const confirmationEmailHtml = `
           <p>Dear ${updatedBooking.name},</p>
           <p>Great news! Your appointment with Ryan Gauthier, DPE has been <strong>confirmed</strong>.</p>
@@ -524,7 +530,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>
             <strong>Date:</strong> ${formattedDate}<br>
             <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
-            <strong>Location:</strong> Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891
+            <strong>Location:</strong> ${locationForEmail}
           </p>
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
@@ -542,22 +548,11 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
           
           <h3>PRACTICAL TEST BRIEFING:</h3>
-          <p>Please look for a Practical Test Briefing, to include the scenario to prepare, approximately 2 weeks prior to your scheduled exam date. If you have not received said briefing 10 days prior, please contact me so I can get that to you.</p>
+          <p>Please expect to receive a Practical Test Briefing approximately two weeks prior to your scheduled examination date. If you have not received the briefing at least 10 days before your test, please contact me so I can ensure it is sent to you promptly.</p>
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
           
-          <h3>FLYING IN:</h3>
-          <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
-          
-          <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
-          
-          <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
-          
-          <p>If you have any difficulty finding the location, feel free to reach out. I look forward to meeting you. A map is available under the Preparation Tab on my website (www.DPERyan.com)</p>
-          
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
-          
-          <h3>WHAT TO BRING:</h3>
+          <h3>WHAT TO PREPARE:</h3>
           <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">

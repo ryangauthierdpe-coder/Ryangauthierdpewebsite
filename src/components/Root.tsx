@@ -31,6 +31,12 @@ export function Root() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleServicesClick = () => {
     navigate('/');
     setIsMenuOpen(false);
@@ -149,14 +155,14 @@ export function Root() {
                   FAQ
                 </button>
                 <button
-                  onClick={() => handleNavigate('debrief-digest')}
-                  className={`w-full text-left px-4 py-3 transition-colors ${
-                    currentPath === 'debrief-digest'
-                      ? 'bg-emerald-400/20 text-emerald-300 border-l-4 border-emerald-400'
+                  onClick={() => handleNavigation('/debrief-digest')}
+                  className={`block w-full text-left px-4 py-3 transition-colors ${
+                    currentPath === '/debrief-digest'
+                      ? 'bg-emerald-400 text-emerald-900 font-semibold'
                       : 'text-gray-300 hover:bg-emerald-400/10 hover:text-emerald-300'
                   }`}
                 >
-                  Ryan's Debrief Digest
+                  Debrief Digest
                 </button>
               </div>
             </div>
@@ -177,7 +183,7 @@ export function Root() {
       <footer className="bg-slate-900 text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <p className="text-gray-400">© 2026 Designated Pilot Examiner. All rights reserved.</p>
+            <p className="text-gray-400">© 2026 Ryan Gauthier, DPE. All rights reserved.</p>
           </div>
         </div>
       </footer>

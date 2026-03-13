@@ -102,7 +102,7 @@ export function HomePage() {
         
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Checkrides */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white border border-emerald-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
                 <CheckCircle className="w-10 h-10 text-emerald-600" />
@@ -130,22 +130,22 @@ export function HomePage() {
                         onClick={() => handleScheduleClick('pp-initial-asel')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">INITIAL Private Pilot - Airplane Single Engine Land (ASEL)</span>
-                        <span className="text-xl font-bold text-emerald-600">$950</span>
+                        <span className="text-gray-700">Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a)</span>
+                        <span className="text-base font-bold text-emerald-600">$950</span>
                       </button>
                       <button
                         onClick={() => handleScheduleClick('pp-initial-amel')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">INITIAL Private Pilot - Airplane Multiengine Land (AMEL)</span>
-                        <span className="text-xl font-bold text-emerald-600">$1,000</span>
+                        <span className="text-gray-700">Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b)</span>
+                        <span className="text-base font-bold text-emerald-600">$1,000</span>
                       </button>
                       <button
                         onClick={() => handleScheduleClick('pp-added-class')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">Added Class Rating - ASEL or AMEL</span>
-                        <span className="text-xl font-bold text-emerald-600">$850</span>
+                        <span className="text-gray-700">Added Category or Class Rating - §61.63</span>
+                        <span className="text-base font-bold text-emerald-600">$850</span>
                       </button>
                     </div>
                   )}
@@ -171,8 +171,8 @@ export function HomePage() {
                         onClick={() => handleScheduleClick('ir-airplane')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">Instrument Rating Airplane</span>
-                        <span className="text-xl font-bold text-emerald-600">$950</span>
+                        <span className="text-gray-700">Instrument Rating Airplane - §61.65</span>
+                        <span className="text-base font-bold text-emerald-600">$950</span>
                       </button>
                     </div>
                   )}
@@ -198,22 +198,22 @@ export function HomePage() {
                         onClick={() => handleScheduleClick('cp-initial-asel')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">INITIAL Commercial Pilot - Airplane Single Engine Land (ASEL)</span>
-                        <span className="text-xl font-bold text-emerald-600">$1,000</span>
+                        <span className="text-gray-700">Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a)</span>
+                        <span className="text-base font-bold text-emerald-600">$1,000</span>
                       </button>
                       <button
                         onClick={() => handleScheduleClick('cp-initial-amel')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">INITIAL Commercial Pilot - Airplane Multiengine Land (AMEL)</span>
-                        <span className="text-xl font-bold text-emerald-600">$1,100</span>
+                        <span className="text-gray-700">Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b)</span>
+                        <span className="text-base font-bold text-emerald-600">$1,100</span>
                       </button>
                       <button
                         onClick={() => handleScheduleClick('cp-added-class')}
                         className="w-full flex justify-between items-baseline py-2 hover:bg-emerald-50 px-2 rounded transition-colors cursor-pointer"
                       >
-                        <span className="text-gray-700">Added Class Rating - ASEL or AMEL</span>
-                        <span className="text-xl font-bold text-emerald-600">$850</span>
+                        <span className="text-gray-700">Added Category or Class Rating - §61.63</span>
+                        <span className="text-base font-bold text-emerald-600">$850</span>
                       </button>
                     </div>
                   )}
@@ -223,22 +223,22 @@ export function HomePage() {
                 <div className="mt-6 mb-6 border border-gray-300 rounded-lg">
                   <button
                     onClick={() => setIsFeesOpen(!isFeesOpen)}
-                    className="w-full flex items-center justify-between text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <span className="font-semibold text-gray-800">Practical Test Fee Policy</span>
+                    <span className="font-semibold text-gray-800 text-sm">Practical Test Fee Policy</span>
                     <ChevronDown
-                      className={`w-5 h-5 text-emerald-600 transition-transform duration-200 ${
+                      className={`w-4 h-4 text-emerald-600 transition-transform duration-200 ${
                         isFeesOpen ? 'transform rotate-180' : ''
                       }`}
                     />
                   </button>
                   
                   {isFeesOpen && (
-                    <div className="mt-4 px-4 py-4 bg-blue-50 border-l-4 border-blue-400 rounded">
-                      <div className="space-y-4">
+                    <div className="mt-3 px-3 py-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                      <div className="space-y-3">
                         <div>
-                          <h5 className="font-semibold text-gray-800 mb-2">Retest Fees</h5>
-                          <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
+                          <h5 className="font-semibold text-gray-800 mb-1.5 text-sm">Retest Fees</h5>
+                          <ul className="list-disc list-inside space-y-0.5 text-gray-700 text-xs ml-2">
                             <li>$500 if only the Flight Portion is required</li>
                             <li>$750 if both the Ground and Flight Portion are required</li>
                             <li>The full exam fee applies if more than 60 days has passed since the original unsatisfactory test</li>
@@ -246,11 +246,11 @@ export function HomePage() {
                         </div>
                         
                         <div>
-                          <h5 className="font-semibold text-gray-800 mb-2">Test Cancellation Fee – $250</h5>
-                          <p className="text-gray-700 text-sm mb-2">
-                            A $250 cancellation fee will apply if a scheduled practical test must be cancelled due to any of the following:
+                          <h5 className="font-semibold text-gray-800 mb-1.5 text-sm">Test Cancellation Fee – $200</h5>
+                          <p className="text-gray-700 text-xs mb-1.5">
+                            A $200 cancellation fee will apply if a scheduled practical test must be cancelled due to any of the following:
                           </p>
-                          <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
+                          <ul className="list-disc list-inside space-y-0.5 text-gray-700 text-xs ml-2">
                             <li>Missing or incomplete training documentation</li>
                             <li>Training requirements not satisfied</li>
                             <li>Pre-existing aircraft airworthiness discrepancies</li>
@@ -259,11 +259,11 @@ export function HomePage() {
                           </ul>
                         </div>
                         
-                        <div className="pt-3 border-t border-blue-200">
-                          <p className="text-gray-700 text-sm mb-2">
+                        <div className="pt-2 border-t border-blue-200">
+                          <p className="text-gray-700 text-xs mb-1.5">
                             <strong>Applicants are strongly encouraged</strong> to verify that all documentation, endorsements, experience, and aircraft requirements are complete prior to the scheduled test date.
                           </p>
-                          <p className="text-gray-700 text-sm">
+                          <p className="text-gray-700 text-xs">
                             If you have any questions regarding eligibility or required documentation, please reach out in advance. Ryan is happy to review your qualifications beforehand to help prevent avoidable cancellations due to last-minute discrepancies.
                           </p>
                         </div>

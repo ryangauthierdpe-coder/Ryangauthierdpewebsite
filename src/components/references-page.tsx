@@ -108,6 +108,28 @@ export function ReferencesPage() {
               </li>
               <li>
                 <a
+                  href="https://www.faa.gov/training_testing/testing/acs/instrument_rating_acs_change_1.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Instrument Rating - Airplane ACS (FAA-S-ACS-8B)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.faa.gov/training_testing/testing/acs/commercial_airplane_acs_7.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Commercial Pilot - Airplane ACS (FAA-S-ACS-7B)
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/phak"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -126,6 +148,50 @@ export function ReferencesPage() {
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Airplane Flying Handbook (AFH)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/instrument_flying_handbook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Instrument Flying Handbook (IFH)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/instrument_procedures_handbook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Instrument Procedures Handbook (IPH)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/media/faa-h-8083-3c.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Airplane Flying Handbook - Multiengine (Chapter 13 & 14)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.faa.gov/regulations_policies/advisory_circulars"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  FAA Advisory Circulars (ACs)
                 </a>
               </li>
             </ul>

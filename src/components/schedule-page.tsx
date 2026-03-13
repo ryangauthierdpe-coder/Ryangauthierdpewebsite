@@ -421,17 +421,17 @@ export function SchedulePage() {
             >
               <option value="">Select a service...</option>
               <optgroup label="Private Pilot Certificate">
-                <option value="pp-initial-asel">INITIAL Private Pilot - ASEL ($950) - 6 hours</option>
-                <option value="pp-initial-amel">INITIAL Private Pilot - AMEL ($1,000) - 6 hours</option>
-                <option value="pp-added-class">Added Class Rating - ASEL or AMEL ($850) - 4 hours</option>
+                <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL) ($950) - 6 hours</option>
+                <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL) ($1,000) - 6 hours</option>
+                <option value="pp-added-class">Added Category or Class Rating ($850) - 4 hours</option>
               </optgroup>
               <optgroup label="Instrument Rating">
                 <option value="ir-airplane">Instrument Rating Airplane ($950) - 6 hours</option>
               </optgroup>
               <optgroup label="Commercial Pilot Certificate">
-                <option value="cp-initial-asel">INITIAL Commercial Pilot - ASEL ($1,000) - 6 hours</option>
-                <option value="cp-initial-amel">INITIAL Commercial Pilot - AMEL ($1,100) - 6 hours</option>
-                <option value="cp-added-class">Added Class Rating - ASEL or AMEL ($850) - 4 hours</option>
+                <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL) ($1,000) - 6 hours</option>
+                <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL) ($1,100) - 6 hours</option>
+                <option value="cp-added-class">Added Category or Class Rating ($850) - 4 hours</option>
               </optgroup>
               <optgroup label="Administrative Functions">
                 <option value="foreign">Foreign Pilot ($400) - 1 hour</option>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { ConfirmBookingModal } from './confirm-booking-modal';
 
 interface Booking {
   bookingId: string;
@@ -14,6 +15,7 @@ interface Booking {
   selectedTime: string;
   createdAt: string;
   status: string;
+  location?: string;
 }
 
 interface AdminPageProps {
@@ -33,6 +35,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [showDeleted, setShowDeleted] = useState(false);
   const [restoringBooking, setRestoringBooking] = useState<string>('');
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [bookingToConfirm, setBookingToConfirm] = useState<{ id: string; name: string; date: string; time: string } | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -169,7 +173,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     return bookingDate < today;
   });
 
-  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+  const updateBookingStatus = async (bookingId: string, newStatus: string, location?: string, selectedDate?: string, selectedTime?: string) => {
     setUpdatingStatus(bookingId);
     try {
       const response = await fetch(
@@ -180,7 +184,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus, location, selectedDate, selectedTime }),
         }
       );
 
@@ -193,7 +197,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       // Update local state
       setBookings(prevBookings =>
         prevBookings.map(b =>
-          b.bookingId === bookingId ? { ...b, status: newStatus } : b
+          b.bookingId === bookingId ? { ...b, status: newStatus, location: location || b.location, selectedDate: selectedDate || b.selectedDate, selectedTime: selectedTime || b.selectedTime } : b
         )
       );
 
@@ -653,7 +657,15 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                               <label className="text-sm font-semibold text-gray-600">Update Status:</label>
                               <select
                                 value={booking.status}
-                                onChange={(e) => updateBookingStatus(booking.bookingId, e.target.value)}
+                                onChange={(e) => {
+                                  const newStatus = e.target.value;
+                                  if (newStatus === 'confirmed') {
+                                    setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime });
+                                    setConfirmModalOpen(true);
+                                  } else {
+                                    updateBookingStatus(booking.bookingId, newStatus);
+                                  }
+                                }}
                                 disabled={updatingStatus === booking.bookingId}
                                 className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
                               >
@@ -898,6 +910,24 @@ export function AdminPage({ onLogout }: AdminPageProps) {
           </div>
         )}
       </div>
+
+      {/* Confirm Booking Modal */}
+      <ConfirmBookingModal
+        isOpen={confirmModalOpen}
+        onClose={() => {
+          setConfirmModalOpen(false);
+          setBookingToConfirm(null);
+        }}
+        onConfirm={(location, selectedDate, selectedTime) => {
+          if (bookingToConfirm) {
+            updateBookingStatus(bookingToConfirm.id, 'confirmed', location, selectedDate, selectedTime);
+            setBookingToConfirm(null);
+          }
+        }}
+        bookingName={bookingToConfirm?.name || ''}
+        currentDate={bookingToConfirm?.date || ''}
+        currentTime={bookingToConfirm?.time || ''}
+      />
     </div>
   );
 }
