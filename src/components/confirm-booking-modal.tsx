@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ConfirmBookingModalProps {
@@ -8,12 +8,22 @@ interface ConfirmBookingModalProps {
   bookingName: string;
   currentDate: string;
   currentTime: string;
+  currentLocation?: string;
 }
 
-export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, currentDate, currentTime }: ConfirmBookingModalProps) {
-  const [location, setLocation] = useState('Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
+export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, currentDate, currentTime, currentLocation }: ConfirmBookingModalProps) {
+  const [location, setLocation] = useState(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [selectedTime, setSelectedTime] = useState(currentTime);
+
+  // Update state when the modal opens with new values
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedDate(currentDate);
+      setSelectedTime(currentTime);
+      setLocation(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
+    }
+  }, [isOpen, currentDate, currentTime, currentLocation]);
 
   if (!isOpen) return null;
 
