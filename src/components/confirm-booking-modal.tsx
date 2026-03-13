@@ -32,8 +32,11 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
   useEffect(() => {
     if (isOpen) {
       setSelectedDate(currentDate);
-      // Ensure the time matches one of the available options
-      const normalizedTime = currentTime || '6:00 AM';
+      // Extract start time if it's a range (e.g., "9:00 AM - 1:00 PM" -> "9:00 AM")
+      let normalizedTime = currentTime || '6:00 AM';
+      if (normalizedTime.includes(' - ')) {
+        normalizedTime = normalizedTime.split(' - ')[0];
+      }
       setSelectedTime(normalizedTime);
       setLocation(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
       
