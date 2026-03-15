@@ -284,7 +284,7 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
         <p><strong>Booking ID:</strong> ${bookingId}</p>
         <p><strong>Status:</strong> Pending Confirmation</p>
         
-        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+        <hr style="margin: 20px 0; border: none; border-top: 2px solid #10b981;">
         
         <p>Please log in to your admin dashboard to confirm or manage this appointment:</p>
         <p><a href="https://dperyan.com/admin" style="background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Admin Dashboard</a></p>
@@ -648,7 +648,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Dear ${updatedBooking.name},</p>
           <p>Great news! Your appointment with Ryan Gauthier, DPE has been <strong>confirmed</strong>.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>APPOINTMENT DETAILS:</h3>
           <p>
@@ -664,7 +664,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <p style=\"font-size: 12px; color: #666; margin-top: 8px;\">Click the button above to add this appointment to your personal calendar</p>
           </div>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>APPLICANT INFORMATION:</h3>
           <p>
@@ -676,17 +676,17 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           </p>
           <p>Please advise if any of this information is incorrect.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>WHAT TO PREPARE:</h3>
           <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>WEATHER:</h3>
           <p>We cannot begin the exam unless we have a reasonable expectation that we will be able to complete the exam, to include the flight. If you have any concerns that we will not be able to fly on the day of your practical test, please let me know in advance so that we may reschedule.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <p>If you need to reschedule or have any questions, please contact me:</p>
           <p>
@@ -830,7 +830,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Dear ${updatedBooking.name},</p>
           <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>cancelled</strong>.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>CANCELLED APPOINTMENT DETAILS:</h3>
           <p>
@@ -839,7 +839,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Location:</strong> Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891
           </p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>NEXT STEPS:</h3>
           <p>If you would like to reschedule your appointment, please contact me at your earliest convenience.</p>
@@ -850,7 +850,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Website:</strong> <a href="http://www.DPERyan.com">www.DPERyan.com</a>
           </p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <p>If you have any questions about this cancellation or would like to discuss rescheduling, please don't hesitate to reach out.</p>
           
@@ -933,15 +933,13 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     }
   }
   
-  // Send "appointment updated" email if date, time, or location changed (and status wasn't confirmed or cancelled)
-  if ((dateChanged || timeChanged || locationChanged) && !isChangingToConfirmed && !isChangingToCancelled && sendEmail) {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  // Update Google Calendar event if date, time, or location changed (regardless of sendEmail flag)
+  if ((dateChanged || timeChanged || locationChanged) && !isChangingToConfirmed && !isChangingToCancelled) {
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
     
-    // Update Google Calendar event if it exists
-    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey && (dateChanged || timeChanged || locationChanged)) {
+    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey) {
       try {
         console.log(`📅 Updating Google Calendar event: ${updatedBooking.calendarEventId}`);
         
@@ -1067,9 +1065,116 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
       } catch (calendarError) {
         console.error('❌ Error updating Google Calendar event:', calendarError);
       }
+    } else if (!updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey) {
+      // No calendar event exists - create a new one
+      try {
+        console.log(`📅 No calendar event exists. Creating new Google Calendar event for booking ${bookingId}...`);
+        
+        // Get OAuth access token using Service Account
+        const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+        
+        // Parse the time range
+        let startTimeStr = updatedBooking.selectedTime;
+        let endTimeStr = updatedBooking.selectedTime;
+        
+        if (updatedBooking.selectedTime.includes(' - ')) {
+          const [start, end] = updatedBooking.selectedTime.split(' - ');
+          startTimeStr = start.trim();
+          endTimeStr = end.trim();
+        }
+        
+        // Parse start time
+        const startTimeParts = startTimeStr.match(/(\\d+):(\\d+)\\s*(AM|PM)/i);
+        if (startTimeParts) {
+          let startHours = parseInt(startTimeParts[1]);
+          const startMinutes = parseInt(startTimeParts[2]);
+          const startPeriod = startTimeParts[3].toUpperCase();
+          
+          if (startPeriod === 'PM' && startHours !== 12) {
+            startHours += 12;
+          } else if (startPeriod === 'AM' && startHours === 12) {
+            startHours = 0;
+          }
+          
+          const startTimeString = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}:00`;
+          const dateTimeString = `${updatedBooking.selectedDate}T${startTimeString}`;
+          
+          // Parse end time
+          const endTimeParts = endTimeStr.match(/(\\d+):(\\d+)\\s*(AM|PM)/i);
+          if (endTimeParts) {
+            let endHours = parseInt(endTimeParts[1]);
+            const endMinutes = parseInt(endTimeParts[2]);
+            const endPeriod = endTimeParts[3].toUpperCase();
+            
+            if (endPeriod === 'PM' && endHours !== 12) {
+              endHours += 12;
+            } else if (endPeriod === 'AM' && endHours === 12) {
+              endHours = 0;
+            }
+            
+            const [year, month, day] = updatedBooking.selectedDate.split('-').map(Number);
+            let endDay = day;
+            let endMonth = month;
+            let endYear = year;
+            
+            if (endHours < startHours) {
+              endDay += 1;
+            }
+            
+            const endTimeString = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+            const endDateTimeString = `${endYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}T${endTimeString}`;
+            
+            const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+            
+            const newCalendarEvent = {
+              summary: `Checkride - ${updatedBooking.name}`,
+              description: `PRACTICAL TEST APPOINTMENT\\\\n\\\\nApplicant: ${updatedBooking.name}\\\\nEmail: ${updatedBooking.email}\\\\nPhone: ${updatedBooking.phone}\\\\nIACRA FTN: ${updatedBooking.iacraFtn}\\\\nAircraft: ${updatedBooking.aircraftMakeModel}\\\\n\\\\nService: ${serviceTypeLabel}\\\\nBooking ID: ${bookingId}`,
+              location: updatedBooking.location || 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
+              start: {
+                dateTime: dateTimeString,
+                timeZone: 'America/New_York',
+              },
+              end: {
+                dateTime: endDateTimeString,
+                timeZone: 'America/New_York',
+              },
+            };
+            
+            const createResponse = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newCalendarEvent),
+              }
+            );
+            
+            if (createResponse.ok) {
+              const newEvent = await createResponse.json();
+              console.log(`✅ New Google Calendar event created for booking ${bookingId}. Event ID: ${newEvent.id}`);
+              
+              // Save the new calendar event ID
+              updatedBooking.calendarEventId = newEvent.id;
+              await kv.set(bookingId, updatedBooking);
+            } else {
+              const errorText = await createResponse.text();
+              console.error('❌ Failed to create new Google Calendar event:', errorText);
+            }
+          }
+        }
+      } catch (calendarError) {
+        console.error('❌ Error creating Google Calendar event:', calendarError);
+      }
     }
+  }
+  
+  // Send "appointment updated" email if date, time, or location changed (and sendEmail is true)
+  if ((dateChanged || timeChanged || locationChanged) && !isChangingToConfirmed && !isChangingToCancelled && sendEmail) {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
-    // Send appointment updated email
     if (resendApiKey) {
       try {
         const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
@@ -1091,11 +1196,6 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
-
-
-          
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
-          
           <h3>UPDATED APPOINTMENT DETAILS:</h3>
           <p>
             <strong>Service:</strong> ${serviceTypeLabel}<br>
@@ -1104,7 +1204,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Location:</strong> ${locationChanged ? `<span style="${highlightStyle}">${locationForEmail}</span>` : locationForEmail}
           </p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>APPLICANT INFORMATION:</h3>
           <p>
@@ -1116,12 +1216,12 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           </p>
           <p>Please advise if any of this information is incorrect.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>WHAT TO PREPARE:</h3>
           <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <p>If you have any questions about this change or need to discuss further modifications, please contact me:</p>
           <p>
@@ -1251,7 +1351,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
       <h3>WEATHER:</h3>
       <p>We cannot begin the exam unless we have a reasonable expectation that we will be able to complete the exam, to include the flight. If you have any concerns that we will not be able to fly on the day of your practical test, please let me know in advance so that we may reschedule.</p>
       
-      <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
       
       <p>If you have any questions or concerns, please contact me:</p>
       <p>
@@ -1372,7 +1472,7 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Dear ${booking.name},</p>
           <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>cancelled</strong>.</p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>CANCELLED APPOINTMENT DETAILS:</h3>
           <p>
@@ -1382,7 +1482,7 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Location:</strong> ${locationForEmail}
           </p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>NEXT STEPS:</h3>
           <p>If you would like to reschedule your appointment, please contact me at your earliest convenience.</p>
@@ -1393,7 +1493,7 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Website:</strong> <a href="http://www.DPERyan.com">www.DPERyan.com</a>
           </p>
           
-          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <p>If you have any questions about this cancellation or would like to discuss rescheduling, please don't hesitate to reach out.</p>
           
@@ -1656,7 +1756,7 @@ app.post("/make-server-e4d9f7d7/send-message", async (c) => {
       ${message.replace(/\n/g, '<br>')}
     </div>
     
-    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+    <hr style="margin: 20px 0; border: none; border-top: 2px solid #10b981;">
     
     <p><strong>Reply To:</strong> <a href="mailto:${email}">${email}</a></p>
     
@@ -1724,7 +1824,7 @@ app.post("/make-server-e4d9f7d7/contact", async (c) => {
     
     <p><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
     
-    <hr style=\"margin: 20px 0; border: none; border-top: 1px solid #ccc;\">
+    <hr style=\"margin: 20px 0; border: none; border-top: 2px solid #10b981;\">
     
     <p><strong>From:</strong> ${name}</p>
     <p><strong>Email:</strong> <a href=\"mailto:${email}\">${email}</a></p>
@@ -1735,7 +1835,7 @@ app.post("/make-server-e4d9f7d7/contact", async (c) => {
       ${message.replace(/\n/g, '<br>')}
     </div>
     
-    <hr style=\"margin: 20px 0; border: none; border-top: 1px solid #ccc;\">
+    <hr style=\"margin: 20px 0; border: none; border-top: 2px solid #10b981;\">
     
     <p style=\"color: #666; font-size: 0.9em;\">
       <em>Reply directly to this email to respond to ${name}</em>
