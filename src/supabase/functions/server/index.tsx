@@ -4,6 +4,26 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import { getGoogleAccessToken } from "./google-auth.tsx";
 
+// Service type labels mapping
+const SERVICE_TYPE_LABELS: { [key: string]: string } = {
+  'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL)',
+  'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL)',
+  'pp-added-class': 'Added Category or Class Rating',
+  'ir-airplane': 'Instrument Rating - Airplane',
+  'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL)',
+  'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL)',
+  'cp-added-class': 'Added Category or Class Rating',
+  'foreign': 'Foreign Pilot',
+  'military': 'Military Competency',
+  'cfi-renewal': 'Flight Instructor Renewal',
+  'ground-instructor': 'Ground Instructor',
+  'sic': 'SIC Type Ratings',
+  'soe': 'SOE Limitation Removals',
+  'atp': 'ATP Limitation Removals',
+  'remote': 'Remote Pilot Certificate',
+  'night': 'Night Flight Limitation Removals',
+};
+
 const app = new Hono();
 
 // Helper function to safely parse JSON
@@ -172,32 +192,7 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
         day: 'numeric'
       });
       
-      const serviceTypeLabels: { [key: string]: string } = {
-        'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a) ($950)',
-        'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b) ($1,000)',
-        'pp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
-        'ir-airplane': 'Instrument Rating Airplane - §61.65 ($950)',
-        'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
-        'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
-        'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
-        'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
-        'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
-        'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
-        'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
-        'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
-        'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
-        'foreign': 'Foreign Pilot ($400)',
-        'military': 'Military Competency ($250)',
-        'cfi-renewal': 'Flight Instructor Renewal ($150)',
-        'ground-instructor': 'Ground Instructor ($150)',
-        'remote': 'Remote Pilot Certificate ($150)',
-        'sic': 'SIC Type Ratings ($250)',
-        'soe': 'SOE Limitation Removals ($250)',
-        'atp': 'ATP Limitation Removals ($150)',
-        'night': 'Night Flight Limitation Removals ($150)'
-      };
-      
-      const serviceTypeLabel = serviceTypeLabels[booking.serviceType] || booking.serviceType;
+      const serviceTypeLabel = SERVICE_TYPE_LABELS[booking.serviceType] || booking.serviceType;
       
       const dpeEmailHtml = `
         <h2>🔔 New Appointment Request</h2>
@@ -454,9 +449,11 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const endTimeString = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
         const endDateTimeString = `${endYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}T${endTimeString}`;
         
+        const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+        
         const calendarEvent = {
           summary: `Checkride - ${updatedBooking.name}`,
-          description: `PRACTICAL TEST APPOINTMENT\n\nApplicant: ${updatedBooking.name}\nEmail: ${updatedBooking.email}\nPhone: ${updatedBooking.phone}\nIACRA FTN: ${updatedBooking.iacraFtn}\nAircraft: ${updatedBooking.aircraftMakeModel}\n\nService: ${updatedBooking.serviceType}\nBooking ID: ${bookingId}`,
+          description: `PRACTICAL TEST APPOINTMENT\n\nApplicant: ${updatedBooking.name}\nEmail: ${updatedBooking.email}\nPhone: ${updatedBooking.phone}\nIACRA FTN: ${updatedBooking.iacraFtn}\nAircraft: ${updatedBooking.aircraftMakeModel}\n\nService: ${serviceTypeLabel}\nBooking ID: ${bookingId}`,
           location: 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
           start: {
             dateTime: dateTimeString,
@@ -513,32 +510,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           day: 'numeric'
         });
         
-        const serviceTypeLabels: { [key: string]: string } = {
-          'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL) - §61.109(a) ($950)',
-          'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL) - §61.109(b) ($1,000)',
-          'pp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
-          'ir-airplane': 'Instrument Rating Airplane - §61.65 ($950)',
-          'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
-          'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
-          'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
-          'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
-          'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
-          'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
-          'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
-          'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
-          'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
-          'foreign': 'Foreign Pilot ($400)',
-          'military': 'Military Competency ($250)',
-          'cfi-renewal': 'Flight Instructor Renewal ($150)',
-          'ground-instructor': 'Ground Instructor ($150)',
-          'remote': 'Remote Pilot Certificate ($150)',
-          'sic': 'SIC Type Ratings ($250)',
-          'soe': 'SOE Limitation Removals ($250)',
-          'atp': 'ATP Limitation Removals ($150)',
-          'night': 'Night Flight Limitation Removals ($150)'
-        };
-        
-        const serviceTypeLabel = serviceTypeLabels[updatedBooking.serviceType] || updatedBooking.serviceType;
+        const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
         
         // Use custom location if provided, otherwise default to Westerly State Airport
         const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';

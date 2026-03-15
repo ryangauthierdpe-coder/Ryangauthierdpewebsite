@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
+// Service type with duration mapping (matching schedule-page.tsx)
+const SERVICE_DURATIONS: { [key: string]: number } = {
+  'pp-initial-asel': 6,
+  'pp-initial-amel': 6,
+  'pp-added-class': 4,
+  'ir-airplane': 6,
+  'cp-initial-asel': 6,
+  'cp-initial-amel': 6,
+  'cp-added-class': 4,
+  'foreign': 1,
+  'military': 1,
+  'cfi-renewal': 1,
+  'ground-instructor': 1,
+  'sic': 1,
+  'soe': 1,
+  'atp': 1,
+  'remote': 1,
+  'night': 1,
+};
+
 interface ConfirmBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -9,12 +29,14 @@ interface ConfirmBookingModalProps {
   currentDate: string;
   currentTime: string;
   currentLocation?: string;
+  serviceType: string;
 }
 
-export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, currentDate, currentTime, currentLocation }: ConfirmBookingModalProps) {
+export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, currentDate, currentTime, currentLocation, serviceType }: ConfirmBookingModalProps) {
   const [location, setLocation] = useState(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
   const [selectedDate, setSelectedDate] = useState(currentDate);
-  const [selectedTime, setSelectedTime] = useState(currentTime);
+  const [selectedStartTime, setSelectedStartTime] = useState('6:00 AM');
+  const [calculatedTimeRange, setCalculatedTimeRange] = useState('');
 
   // Generate time options from 6:00 AM to 8:00 PM in 30-minute increments
   const timeOptions = [];
@@ -28,6 +50,45 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
     }
   }
 
+  // Calculate end time based on service duration
+  const calculateTimeRange = (startTime: string) => {
+    const duration = SERVICE_DURATIONS[serviceType] || 6;
+    
+    // Parse start time
+    const match = startTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return startTime;
+    
+    let hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    const period = match[3].toUpperCase();
+    
+    // Convert to 24-hour format
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+    
+    // Add duration
+    let endHours = hours + duration;
+    const endMinutes = minutes;
+    
+    // Convert back to 12-hour format for end time
+    const endPeriod = endHours >= 12 ? 'PM' : 'AM';
+    let displayEndHours = endHours;
+    if (endHours > 12) {
+      displayEndHours = endHours - 12;
+    } else if (endHours === 0) {
+      displayEndHours = 12;
+    } else if (endHours === 12) {
+      displayEndHours = 12;
+    }
+    
+    const endTimeStr = `${displayEndHours}:${endMinutes.toString().padStart(2, '0')} ${endPeriod}`;
+    
+    return `${startTime} - ${endTimeStr}`;
+  };
+
   // Update state when the modal opens with new values
   useEffect(() => {
     if (isOpen) {
@@ -37,19 +98,31 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
       if (normalizedTime.includes(' - ')) {
         normalizedTime = normalizedTime.split(' - ')[0];
       }
-      setSelectedTime(normalizedTime);
+      setSelectedStartTime(normalizedTime);
       setLocation(currentLocation || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891');
       
+      // Calculate the time range
+      const timeRange = calculateTimeRange(normalizedTime);
+      setCalculatedTimeRange(timeRange);
+      
       // Debug log to check values
-      console.log('Modal opened with:', { currentDate, currentTime, normalizedTime, currentLocation });
+      console.log('Modal opened with:', { currentDate, currentTime, normalizedTime, currentLocation, serviceType, timeRange });
     }
-  }, [isOpen, currentDate, currentTime, currentLocation]);
+  }, [isOpen, currentDate, currentTime, currentLocation, serviceType]);
+
+  // Update calculated time range when start time changes
+  const handleStartTimeChange = (newStartTime: string) => {
+    setSelectedStartTime(newStartTime);
+    const timeRange = calculateTimeRange(newStartTime);
+    setCalculatedTimeRange(timeRange);
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(location, selectedDate, selectedTime);
+    // Pass the full time range to onConfirm
+    onConfirm(location, selectedDate, calculatedTimeRange);
     onClose();
   };
 
@@ -90,12 +163,12 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
             {/* Time Field */}
             <div className="mb-4">
               <label htmlFor="time" className="block text-sm font-semibold text-gray-700 mb-2">
-                Appointment Time
+                Appointment Start Time
               </label>
               <select
                 id="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
+                value={selectedStartTime}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 required
               >
@@ -105,6 +178,16 @@ export function ConfirmBookingModal({ isOpen, onClose, onConfirm, bookingName, c
                   </option>
                 ))}
               </select>
+              {calculatedTimeRange && (
+                <div className="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <p className="text-sm font-semibold text-emerald-800">
+                    📅 Full Appointment Time: {calculatedTimeRange}
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Duration: {SERVICE_DURATIONS[serviceType] || 6} hour{(SERVICE_DURATIONS[serviceType] || 6) !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
             </div>
             
             <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">

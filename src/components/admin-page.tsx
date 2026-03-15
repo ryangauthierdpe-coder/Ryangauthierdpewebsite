@@ -36,7 +36,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [restoringBooking, setRestoringBooking] = useState<string>('');
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [bookingToConfirm, setBookingToConfirm] = useState<{ id: string; name: string; date: string; time: string; location?: string } | null>(null);
+  const [bookingToConfirm, setBookingToConfirm] = useState<{ id: string; name: string; date: string; time: string; location?: string; serviceType: string } | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -660,7 +660,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                   time: booking.selectedTime,
                                   location: booking.location
                                 });
-                                setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location });
+                                setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location, serviceType: booking.serviceType });
                                 setConfirmModalOpen(true);
                               }}
                               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
@@ -675,7 +675,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 onChange={(e) => {
                                   const newStatus = e.target.value;
                                   if (newStatus === 'confirmed') {
-                                    setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location });
+                                    setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location, serviceType: booking.serviceType });
                                     setConfirmModalOpen(true);
                                   } else {
                                     updateBookingStatus(booking.bookingId, newStatus);
@@ -943,6 +943,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         currentDate={bookingToConfirm?.date || ''}
         currentTime={bookingToConfirm?.time || ''}
         currentLocation={bookingToConfirm?.location}
+        serviceType={bookingToConfirm?.serviceType || 'pp-initial-asel'}
       />
     </div>
   );
