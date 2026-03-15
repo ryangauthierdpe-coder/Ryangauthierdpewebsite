@@ -1302,6 +1302,125 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     }
   }
   
+  // FINAL CHECK: If booking is confirmed but has no calendar event, create one now
+  // This catches cases where the calendar event was manually deleted or never created
+  if (updatedBooking.status === 'confirmed' && !updatedBooking.calendarEventId) {
+    const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+    
+    if (calendarId && serviceAccountEmail && serviceAccountKey) {
+      try {
+        console.log(`📅 Confirmed booking ${bookingId} is missing calendar event. Creating now...`);
+        
+        // Get OAuth access token using Service Account
+        const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+        
+        // Parse the time range
+        let startTimeStr = updatedBooking.selectedTime;
+        let endTimeStr = updatedBooking.selectedTime;
+        
+        if (updatedBooking.selectedTime.includes(' - ')) {
+          const [start, end] = updatedBooking.selectedTime.split(' - ');
+          startTimeStr = start.trim();
+          endTimeStr = end.trim();
+        }
+        
+        // Parse start time
+        const startTimeParts = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (startTimeParts) {
+          let startHours = parseInt(startTimeParts[1]);
+          const startMinutes = parseInt(startTimeParts[2]);
+          const startPeriod = startTimeParts[3].toUpperCase();
+          
+          if (startPeriod === 'PM' && startHours !== 12) {
+            startHours += 12;
+          } else if (startPeriod === 'AM' && startHours === 12) {
+            startHours = 0;
+          }
+          
+          const startTimeString = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}:00`;
+          const dateTimeString = `${updatedBooking.selectedDate}T${startTimeString}`;
+          
+          // Parse end time
+          const endTimeParts = endTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+          if (endTimeParts) {
+            let endHours = parseInt(endTimeParts[1]);
+            const endMinutes = parseInt(endTimeParts[2]);
+            const endPeriod = endTimeParts[3].toUpperCase();
+            
+            if (endPeriod === 'PM' && endHours !== 12) {
+              endHours += 12;
+            } else if (endPeriod === 'AM' && endHours === 12) {
+              endHours = 0;
+            }
+            
+            const [year, month, day] = updatedBooking.selectedDate.split('-').map(Number);
+            let endDay = day;
+            let endMonth = month;
+            let endYear = year;
+            
+            if (endHours < startHours) {
+              endDay += 1;
+            }
+            
+            const endTimeString = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+            const endDateTimeString = `${endYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}T${endTimeString}`;
+            
+            const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+            
+            const calendarEvent = {
+              summary: `Checkride - ${updatedBooking.name}`,
+              description: `PRACTICAL TEST APPOINTMENT\n\nApplicant: ${updatedBooking.name}\nEmail: ${updatedBooking.email}\nPhone: ${updatedBooking.phone}\nIACRA FTN: ${updatedBooking.iacraFtn}\nAircraft: ${updatedBooking.aircraftMakeModel}\n\nService: ${serviceTypeLabel}\nBooking ID: ${bookingId}`,
+              location: updatedBooking.location || 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
+              start: {
+                dateTime: dateTimeString,
+                timeZone: 'America/New_York',
+              },
+              end: {
+                dateTime: endDateTimeString,
+                timeZone: 'America/New_York',
+              },
+              reminders: {
+                useDefault: false,
+                overrides: [
+                  { method: 'email', minutes: 24 * 60 }, // 1 day before
+                  { method: 'popup', minutes: 60 }, // 1 hour before
+                ],
+              },
+            };
+            
+            const createResponse = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(calendarEvent),
+              }
+            );
+            
+            if (createResponse.ok) {
+              const newEvent = await createResponse.json();
+              console.log(`✅ Calendar event created for confirmed booking ${bookingId}. Event ID: ${newEvent.id}`);
+              
+              // Save the calendar event ID
+              updatedBooking.calendarEventId = newEvent.id;
+              await kv.set(bookingId, updatedBooking);
+            } else {
+              const errorText = await createResponse.text();
+              console.error('❌ Failed to create calendar event for confirmed booking:', errorText);
+            }
+          }
+        }
+      } catch (calendarError) {
+        console.error('❌ Error creating missing calendar event:', calendarError);
+      }
+    }
+  }
+  
   return c.json({ 
     success: true, 
     booking: updatedBooking,
