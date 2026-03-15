@@ -912,6 +912,154 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
       return c.json({ error: 'Booking not found' }, 404);
     }
     
+    // Delete Google Calendar event if it exists
+    const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+    
+    if (booking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey) {
+      try {
+        console.log(`🗑️ Attempting to delete Google Calendar event: ${booking.calendarEventId}`);
+        
+        // Get OAuth access token using Service Account
+        const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+        
+        const calendarResponse = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${booking.calendarEventId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+        
+        if (calendarResponse.ok || calendarResponse.status === 204) {
+          console.log(`✅ Google Calendar event deleted for booking ${bookingId}`);
+        } else {
+          const errorText = await calendarResponse.text();
+          console.error('❌ Failed to delete Google Calendar event:', errorText);
+        }
+      } catch (calendarError) {
+        console.error('❌ Error deleting Google Calendar event:', calendarError);
+        // Don't fail the deletion if calendar deletion fails
+      }
+    }
+    
+    // Send cancellation email to applicant
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey) {
+      try {
+        const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const serviceTypeLabel = SERVICE_TYPE_LABELS[booking.serviceType] || booking.serviceType;
+        const locationForEmail = booking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
+        
+        const cancellationEmailHtml = `
+          <p>Dear ${booking.name},</p>
+          <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>cancelled</strong>.</p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>CANCELLED APPOINTMENT DETAILS:</h3>
+          <p>
+            <strong>Service:</strong> ${serviceTypeLabel}<br>
+            <strong>Date:</strong> ${formattedDate}<br>
+            <strong>Time:</strong> ${booking.selectedTime}<br>
+            <strong>Location:</strong> ${locationForEmail}
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>NEXT STEPS:</h3>
+          <p>If you would like to reschedule your appointment, please contact me at your earliest convenience.</p>
+          
+          <p>
+            <strong>Phone:</strong> 860-912-3283<br>
+            <strong>Email:</strong> RyanGauthierDPE@gmail.com<br>
+            <strong>Website:</strong> <a href="http://www.DPERyan.com">www.DPERyan.com</a>
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <p>If you have any questions about this cancellation or would like to discuss rescheduling, please don't hesitate to reach out.</p>
+          
+          <p>All the best,</p>
+          <p>Ryan</p>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
+            --<br>
+            <strong>Ryan Gauthier</strong><br>
+            Designated Pilot Examiner (DPE)<br>
+            Boston FSDO: EA-61<br>
+            Email: RyanGauthierDPE@gmail.com<br>
+            Phone: 860-912-3283
+          </p>
+        `;
+        
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
+            to: [booking.email], // Send to the applicant
+            cc: ['ryangauthierdpe@gmail.com'], // CC Ryan's email
+            subject: `Appointment Cancelled - ${formattedDate}`,
+            html: cancellationEmailHtml,
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log(`✅ Cancellation email sent to ${booking.email} for deleted booking ${bookingId}`);
+        } else {
+          console.error('❌ Failed to send cancellation email:', result);
+          
+          // Try with fallback domain if verification error
+          if (result.statusCode === 403 && result.message?.includes('verify a domain')) {
+            try {
+              const fallbackResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+                  to: ['ryangauthierdpe@gmail.com'],
+                  subject: `[COPY FOR YOUR RECORDS] Appointment Cancelled - ${booking.name} on ${formattedDate}`,
+                  html: `
+                    <p><strong>⚠️ Note:</strong> This is a copy of the cancellation email that should have been sent to ${booking.email}. 
+                    Please forward this manually or contact the applicant directly.</p>
+                    <hr style="margin: 20px 0;">
+                    ${cancellationEmailHtml}
+                  `,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                console.log(`✅ Fallback cancellation email sent to ryangauthierdpe@gmail.com`);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Failed to send fallback cancellation email:', fallbackError);
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending cancellation email:', emailError);
+        // Don't fail the deletion if email fails
+      }
+    }
+    
     // Move the booking to deleted storage with a timestamp
     const deletedBooking = {
       ...booking,
@@ -924,7 +1072,7 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     // Remove from active bookings
     await kv.del(bookingId);
     
-    console.log(`Booking ${bookingId} moved to deleted storage`);
+    console.log(`Booking ${bookingId} moved to deleted storage and cancellation email sent`);
     
     return c.json({ 
       success: true, 
