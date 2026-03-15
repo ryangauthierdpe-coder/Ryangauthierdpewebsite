@@ -56,7 +56,6 @@ export function SchedulePage() {
     selectedTime: '',
   });
   const [submitted, setSubmitted] = useState(false);
-  const [googleCalendarUrl, setGoogleCalendarUrl] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
   const [busyTimes, setBusyTimes] = useState<BusyTime[]>([]);
@@ -336,10 +335,6 @@ export function SchedulePage() {
 
       console.log('Booking submitted successfully:', data);
 
-      // Generate Google Calendar URL
-      const calendarUrl = generateGoogleCalendarUrl(formData);
-      setGoogleCalendarUrl(calendarUrl);
-
       setSubmitted(true);
     } catch (err) {
       console.error('Error submitting booking:', err);
@@ -370,19 +365,8 @@ export function SchedulePage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
             <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-green-900 mb-2">Booking Submitted!</h2>
-            <p className="text-green-800 mb-6">
-              Thank you for scheduling your appointment. You will receive a confirmation email shortly.
-            </p>
-            <a
-              href={googleCalendarUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-transparent border-2 border-emerald-500 hover:bg-emerald-500/20 text-emerald-600 px-6 py-3 rounded-lg transition-colors font-semibold"
-            >
-              Add to Your Google Calendar
-            </a>
-            <p className="text-sm text-gray-600 mt-4">
-              Click the button above to add this appointment to your personal Google Calendar
+            <p className="text-green-800">
+              Thank you for scheduling your appointment. You will receive a confirmation email shortly with an option to add the appointment to your calendar.
             </p>
           </div>
         </div>

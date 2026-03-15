@@ -47,6 +47,73 @@ async function safeJsonParse(c: any) {
   }
 }
 
+// Helper function to generate Google Calendar URL for email
+function generateGoogleCalendarUrlForEmail(booking: any, formattedDate: string, serviceTypeLabel: string): string {
+  // Parse the time to extract start hour
+  const timeMatch = booking.selectedTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!timeMatch) {
+    console.error('Failed to parse time:', booking.selectedTime);
+    return '';
+  }
+  
+  let startHour = parseInt(timeMatch[1]);
+  const startMinutes = parseInt(timeMatch[2]);
+  const period = timeMatch[3].toUpperCase();
+  
+  // Convert to 24-hour format
+  if (period === 'PM' && startHour !== 12) {
+    startHour += 12;
+  } else if (period === 'AM' && startHour === 12) {
+    startHour = 0;
+  }
+  
+  // Parse duration from service type (default 6 hours)
+  const SERVICE_DURATIONS: { [key: string]: number } = {
+    'pp-initial-asel': 6,
+    'pp-initial-amel': 6,
+    'pp-added-class': 4,
+    'ir-airplane': 6,
+    'cp-initial-asel': 6,
+    'cp-initial-amel': 6,
+    'cp-added-class': 4,
+    'foreign': 1,
+    'military': 1,
+    'cfi-renewal': 1,
+    'ground-instructor': 1,
+    'sic': 1,
+    'soe': 1,
+    'atp': 1,
+    'remote': 1,
+    'night': 1,
+  };
+  
+  const duration = SERVICE_DURATIONS[booking.serviceType] || 6;
+  const endHour = startHour + duration;
+  
+  // Create datetime strings for Google Calendar
+  const [year, month, day] = booking.selectedDate.split('-');
+  const startHourStr = startHour.toString().padStart(2, '0');
+  const startMinutesStr = startMinutes.toString().padStart(2, '0');
+  const endHourStr = endHour.toString().padStart(2, '0');
+  const startDateTime = `${year}${month}${day}T${startHourStr}${startMinutesStr}00`;
+  const endDateTime = `${year}${month}${day}T${endHourStr}${startMinutesStr}00`;
+  
+  const title = encodeURIComponent(`${serviceTypeLabel} - Checkride`);
+  const details = encodeURIComponent(
+    `Practical Test Appointment with Ryan Gauthier, DPE\\n\\n` +
+    `Service: ${serviceTypeLabel}\\n` +
+    `Applicant: ${booking.name}\\n` +
+    `IACRA FTN: ${booking.iacraFtn}\\n` +
+    `Aircraft: ${booking.aircraftMakeModel}\\n\\n` +
+    `For questions, contact:\\n` +
+    `Phone: 860-912-3283\\n` +
+    `Email: RyanGauthierDPE@gmail.com`
+  );
+  const location = encodeURIComponent(booking.location || 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891');
+  
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&details=${details}&location=${location}`;
+}
+
 // Enable logger
 app.use('*', logger(console.log));
 
@@ -519,7 +586,40 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             await kv.set(bookingId, updatedBooking);
           }
         } else {
-          console.error('❌ Failed to create Google Calendar event:', calendarResult);
+          console.error('❌ Failed to create/update Google Calendar event:', calendarResult);
+          
+          // If we tried to update but event not found (404 or 410), create a new one
+          if (shouldUpdateExistingEvent && (calendarResponse.status === 404 || calendarResponse.status === 410)) {
+            console.log(`⚠️ Calendar event not found (may have been deleted). Creating new event...`);
+            
+            try {
+              const createResponse = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(calendarEvent),
+                }
+              );
+              
+              const createResult = await createResponse.json();
+              
+              if (createResponse.ok) {
+                console.log(`✅ New Google Calendar event created for booking ${bookingId}. Event ID: ${createResult.id}`);
+                
+                // Save the new calendar event ID
+                updatedBooking.calendarEventId = createResult.id;
+                await kv.set(bookingId, updatedBooking);
+              } else {
+                console.error('❌ Failed to create new Google Calendar event:', createResult);
+              }
+            } catch (createError) {
+              console.error('❌ Error creating new Google Calendar event:', createError);
+            }
+          }
         }
       } catch (calendarError) {
         console.error('❌ Error creating Google Calendar event:', calendarError);
@@ -541,6 +641,9 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         // Use custom location if provided, otherwise default to Westerly State Airport
         const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
         
+        // Generate Google Calendar URL
+        const calendarUrl = generateGoogleCalendarUrlForEmail(updatedBooking, formattedDate, serviceTypeLabel);
+        
         const confirmationEmailHtml = `
           <p>Dear ${updatedBooking.name},</p>
           <p>Great news! Your appointment with Ryan Gauthier, DPE has been <strong>confirmed</strong>.</p>
@@ -553,6 +656,13 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
             <strong>Location:</strong> ${locationForEmail}
           </p>
+          
+          <div style=\"text-align: center; margin: 20px 0;\">
+            <a href=\"${calendarUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;\">
+              📅 Add to Google Calendar
+            </a>
+            <p style=\"font-size: 12px; color: #666; margin-top: 8px;\">Click the button above to add this appointment to your personal calendar</p>
+          </div>
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
           
@@ -665,14 +775,12 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     }
   }
   
-  // Send automatic cancellation email to customer if status is "cancelled"
-  if (isChangingToCancelled && sendEmail) {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  // Delete Google Calendar event if status is changing to cancelled (regardless of sendEmail flag)
+  if (isChangingToCancelled) {
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
     
-    // Delete Google Calendar event if it exists
     if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey) {
       try {
         console.log(`🗑️ Attempting to delete Google Calendar event: ${updatedBooking.calendarEventId}`);
@@ -703,8 +811,12 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         // Don't fail the cancellation if calendar deletion fails
       }
     }
+  }
+  
+  // Send automatic cancellation email to customer if status is "cancelled" and sendEmail is true
+  if (isChangingToCancelled && sendEmail) {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
-    // Send cancellation email to applicant
     if (resendApiKey) {
       try {
         const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
@@ -920,6 +1032,35 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             } else {
               const errorText = await calendarResponse.text();
               console.error('❌ Failed to update Google Calendar event:', errorText);
+              
+              // If event not found (404), create a new one
+              if (calendarResponse.status === 404 || calendarResponse.status === 410) {
+                console.log(`⚠️ Calendar event not found (may have been deleted). Creating new event...`);
+                
+                const createResponse = await fetch(
+                  `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${accessToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updatedCalendarEvent),
+                  }
+                );
+                
+                if (createResponse.ok) {
+                  const newEvent = await createResponse.json();
+                  console.log(`✅ New Google Calendar event created for booking ${bookingId}. Event ID: ${newEvent.id}`);
+                  
+                  // Save the new calendar event ID
+                  updatedBooking.calendarEventId = newEvent.id;
+                  await kv.set(bookingId, updatedBooking);
+                } else {
+                  const createErrorText = await createResponse.text();
+                  console.error('❌ Failed to create new Google Calendar event:', createErrorText);
+                }
+              }
             }
           }
         }
@@ -941,12 +1082,8 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
         const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
         
-        // Build a list of what changed
-        const changes = [];
-        if (dateChanged) changes.push('Date');
-        if (timeChanged) changes.push('Time');
-        if (locationChanged) changes.push('Location');
-        const changesText = changes.join(', ');
+        // Highlight style for changed fields
+        const highlightStyle = 'background-color: #fef3c7; padding: 2px 6px; border-radius: 3px; font-weight: bold;';
         
         const updateEmailHtml = `
           <p>Dear ${updatedBooking.name},</p>
@@ -954,17 +1091,17 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
-          <h3>📝 CHANGES MADE:</h3>
-          <p><strong>${changesText}</strong> updated for your appointment.</p>
+
+
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
           
           <h3>UPDATED APPOINTMENT DETAILS:</h3>
           <p>
             <strong>Service:</strong> ${serviceTypeLabel}<br>
-            <strong>Date:</strong> ${formattedDate}<br>
-            <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
-            <strong>Location:</strong> ${locationForEmail}
+            <strong>Date:</strong> ${dateChanged ? `<span style="${highlightStyle}">${formattedDate}</span>` : formattedDate}<br>
+            <strong>Time:</strong> ${timeChanged ? `<span style="${highlightStyle}">${updatedBooking.selectedTime}</span>` : updatedBooking.selectedTime}<br>
+            <strong>Location:</strong> ${locationChanged ? `<span style="${highlightStyle}">${locationForEmail}</span>` : locationForEmail}
           </p>
           
           <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
