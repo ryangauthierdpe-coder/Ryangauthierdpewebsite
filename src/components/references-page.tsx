@@ -174,7 +174,7 @@ export function ReferencesPage() {
               </li>
               <li>
                 <a
-                  href="https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/media/faa-h-8083-3c.pdf"
+                  href="https://www.faa.gov/sites/faa.gov/files/regulations_policies/handbooks_manuals/aviation/airplane_handbook/14_afh_ch13.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
