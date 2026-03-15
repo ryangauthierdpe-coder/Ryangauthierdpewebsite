@@ -88,15 +88,31 @@ function generateGoogleCalendarUrlForEmail(booking: any, formattedDate: string, 
   };
   
   const duration = SERVICE_DURATIONS[booking.serviceType] || 6;
-  const endHour = startHour + duration;
   
   // Create datetime strings for Google Calendar
+  // Google Calendar URLs expect UTC time, so we need to convert from Eastern Time
   const [year, month, day] = booking.selectedDate.split('-');
-  const startHourStr = startHour.toString().padStart(2, '0');
-  const startMinutesStr = startMinutes.toString().padStart(2, '0');
-  const endHourStr = endHour.toString().padStart(2, '0');
-  const startDateTime = `${year}${month}${day}T${startHourStr}${startMinutesStr}00`;
-  const endDateTime = `${year}${month}${day}T${endHourStr}${startMinutesStr}00`;
+  
+  // Create a Date object for the start time in Eastern Time
+  // Note: month is 0-indexed in JavaScript Date
+  const startDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), startHour, startMinutes, 0);
+  
+  // Create end date by adding duration hours
+  const endDate = new Date(startDate.getTime() + (duration * 60 * 60 * 1000));
+  
+  // Format as Google Calendar datetime strings (YYYYMMDDTHHmmssZ in UTC)
+  const formatGoogleDateTime = (date: Date) => {
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    const h = String(date.getUTCHours()).padStart(2, '0');
+    const min = String(date.getUTCMinutes()).padStart(2, '0');
+    const s = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${y}${m}${d}T${h}${min}${s}Z`;
+  };
+  
+  const startDateTime = formatGoogleDateTime(startDate);
+  const endDateTime = formatGoogleDateTime(endDate);
   
   const title = encodeURIComponent(`${serviceTypeLabel} - Checkride`);
   const details = encodeURIComponent(
