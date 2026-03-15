@@ -949,8 +949,20 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         }}
         onConfirm={(location, selectedDate, selectedTime) => {
           if (bookingToConfirm) {
-            const sendEmail = window.confirm(`Would you like to notify ${bookingToConfirm.name} of this confirmation via email?`);
-            updateBookingStatus(bookingToConfirm.id, 'confirmed', location, selectedDate, selectedTime, sendEmail);
+            // Get the current booking to check its status
+            const currentBooking = bookings.find(b => b.bookingId === bookingToConfirm.id);
+            const isAlreadyConfirmed = currentBooking?.status === 'confirmed';
+            
+            // Ask different question based on whether it's a new confirmation or an update
+            const message = isAlreadyConfirmed 
+              ? `Would you like to notify ${bookingToConfirm.name} of this appointment update via email?`
+              : `Would you like to notify ${bookingToConfirm.name} of this confirmation via email?`;
+            const sendEmail = window.confirm(message);
+            
+            // If already confirmed, keep the current status to trigger update email
+            // If not confirmed, change to confirmed to trigger confirmation email
+            const newStatus = isAlreadyConfirmed ? currentBooking.status : 'confirmed';
+            updateBookingStatus(bookingToConfirm.id, newStatus, location, selectedDate, selectedTime, sendEmail);
             setBookingToConfirm(null);
           }
         }}
