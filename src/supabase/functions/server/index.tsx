@@ -353,6 +353,11 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   const timeChanged = selectedTime && selectedTime !== existingBooking.selectedTime;
   const locationChanged = location && location !== existingBooking.location;
   
+  // Check if status is changing
+  const statusChanged = status !== existingBooking.status;
+  const isChangingToConfirmed = statusChanged && status === 'confirmed';
+  const isChangingToCancelled = statusChanged && status === 'cancelled';
+  
   // Update booking with new status and optionally location, date, and time
   const updatedBooking = {
     ...existingBooking,
@@ -368,7 +373,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   console.log(`Booking ${bookingId} status updated to: ${status}${location ? ` with location: ${location}` : ''}${selectedDate ? ` on date: ${selectedDate}` : ''}${selectedTime ? ` at time: ${selectedTime}` : ''}`);
   
   // Send automatic confirmation email to customer if status is "confirmed"
-  if (status === 'confirmed' && sendEmail) {
+  if (isChangingToConfirmed && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
@@ -459,7 +464,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const calendarEvent = {
           summary: `Checkride - ${updatedBooking.name}`,
           description: `PRACTICAL TEST APPOINTMENT\n\nApplicant: ${updatedBooking.name}\nEmail: ${updatedBooking.email}\nPhone: ${updatedBooking.phone}\nIACRA FTN: ${updatedBooking.iacraFtn}\nAircraft: ${updatedBooking.aircraftMakeModel}\n\nService: ${serviceTypeLabel}\nBooking ID: ${bookingId}`,
-          location: 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
+          location: updatedBooking.location || 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
           start: {
             dateTime: dateTimeString,
             timeZone: 'America/New_York',
@@ -477,10 +482,22 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           },
         };
         
+        // Check if we should update existing event or create new one
+        const shouldUpdateExistingEvent = updatedBooking.calendarEventId;
+        const calendarUrl = shouldUpdateExistingEvent
+          ? `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${updatedBooking.calendarEventId}`
+          : `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
+        const calendarMethod = shouldUpdateExistingEvent ? 'PATCH' : 'POST';
+        
+        console.log(`📅 ${shouldUpdateExistingEvent ? 'Updating existing' : 'Creating new'} Google Calendar event...`);
+        if (shouldUpdateExistingEvent) {
+          console.log(`  - Existing Event ID: ${updatedBooking.calendarEventId}`);
+        }
+        
         const calendarResponse = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+          calendarUrl,
           {
-            method: 'POST',
+            method: calendarMethod,
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
@@ -492,11 +509,15 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const calendarResult = await calendarResponse.json();
         
         if (calendarResponse.ok) {
-          console.log(`✅ Google Calendar event created for booking ${bookingId}. Event ID: ${calendarResult.id}`);
-          
-          // Save the calendar event ID to the booking for future reference
-          updatedBooking.calendarEventId = calendarResult.id;
-          await kv.set(bookingId, updatedBooking);
+          if (shouldUpdateExistingEvent) {
+            console.log(`✅ Google Calendar event updated for booking ${bookingId}. Event ID: ${calendarResult.id}`);
+          } else {
+            console.log(`✅ Google Calendar event created for booking ${bookingId}. Event ID: ${calendarResult.id}`);
+            
+            // Save the calendar event ID to the booking for future reference (only for new events)
+            updatedBooking.calendarEventId = calendarResult.id;
+            await kv.set(bookingId, updatedBooking);
+          }
         } else {
           console.error('❌ Failed to create Google Calendar event:', calendarResult);
         }
@@ -645,7 +666,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   // Send automatic cancellation email to customer if status is "cancelled"
-  if (status === 'cancelled' && sendEmail) {
+  if (isChangingToCancelled && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
@@ -801,14 +822,14 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   // Send "appointment updated" email if date, time, or location changed (and status wasn't confirmed or cancelled)
-  if ((dateChanged || timeChanged || locationChanged) && status !== 'confirmed' && status !== 'cancelled' && sendEmail) {
+  if ((dateChanged || timeChanged || locationChanged) && !isChangingToConfirmed && !isChangingToCancelled && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
     
     // Update Google Calendar event if it exists
-    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey && (dateChanged || timeChanged)) {
+    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey && (dateChanged || timeChanged || locationChanged)) {
       try {
         console.log(`📅 Updating Google Calendar event: ${updatedBooking.calendarEventId}`);
         
