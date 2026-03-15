@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { ConfirmBookingModal } from './confirm-booking-modal';
+import { EmailConfirmationModal } from './email-confirmation-modal';
 
 interface Booking {
   bookingId: string;
@@ -37,6 +38,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [bookingToConfirm, setBookingToConfirm] = useState<{ id: string; name: string; date: string; time: string; location?: string; serviceType: string } | null>(null);
+  const [emailConfirmationModalOpen, setEmailConfirmationModalOpen] = useState(false);
+  const [emailConfirmationBookingId, setEmailConfirmationBookingId] = useState<string>('');
+  const [emailConfirmationLocation, setEmailConfirmationLocation] = useState<string>('');
+  const [emailConfirmationDate, setEmailConfirmationDate] = useState<string>('');
+  const [emailConfirmationTime, setEmailConfirmationTime] = useState<string>('');
 
   useEffect(() => {
     fetchBookings();
@@ -173,7 +179,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     return bookingDate < today;
   });
 
-  const updateBookingStatus = async (bookingId: string, newStatus: string, location?: string, selectedDate?: string, selectedTime?: string) => {
+  const updateBookingStatus = async (bookingId: string, newStatus: string, location?: string, selectedDate?: string, selectedTime?: string, sendEmail: boolean = true) => {
     setUpdatingStatus(bookingId);
     try {
       const response = await fetch(
@@ -184,7 +190,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ status: newStatus, location, selectedDate, selectedTime }),
+          body: JSON.stringify({ status: newStatus, location, selectedDate, selectedTime, sendEmail }),
         }
       );
 
@@ -252,11 +258,16 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     );
     
     if (!confirmDelete) return;
+
+    // Ask if they want to notify the applicant
+    const sendEmail = window.confirm(
+      `Would you like to notify ${booking.name} of this cancellation via email?`
+    );
     
     setDeletingBooking(bookingId);
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}?sendEmail=${sendEmail}`,
         {
           method: 'DELETE',
           headers: {
@@ -677,6 +688,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                   if (newStatus === 'confirmed') {
                                     setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location, serviceType: booking.serviceType });
                                     setConfirmModalOpen(true);
+                                  } else if (newStatus === 'cancelled') {
+                                    const sendEmail = window.confirm(`Would you like to notify ${booking.name} of this cancellation via email?`);
+                                    updateBookingStatus(booking.bookingId, newStatus, undefined, undefined, undefined, sendEmail);
                                   } else {
                                     updateBookingStatus(booking.bookingId, newStatus);
                                   }
@@ -935,7 +949,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         }}
         onConfirm={(location, selectedDate, selectedTime) => {
           if (bookingToConfirm) {
-            updateBookingStatus(bookingToConfirm.id, 'confirmed', location, selectedDate, selectedTime);
+            const sendEmail = window.confirm(`Would you like to notify ${bookingToConfirm.name} of this confirmation via email?`);
+            updateBookingStatus(bookingToConfirm.id, 'confirmed', location, selectedDate, selectedTime, sendEmail);
             setBookingToConfirm(null);
           }
         }}
@@ -944,6 +959,33 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         currentTime={bookingToConfirm?.time || ''}
         currentLocation={bookingToConfirm?.location}
         serviceType={bookingToConfirm?.serviceType || 'pp-initial-asel'}
+      />
+
+      {/* Email Confirmation Modal */}
+      <EmailConfirmationModal
+        isOpen={emailConfirmationModalOpen}
+        onClose={() => {
+          setEmailConfirmationModalOpen(false);
+          setEmailConfirmationBookingId('');
+          setEmailConfirmationLocation('');
+          setEmailConfirmationDate('');
+          setEmailConfirmationTime('');
+        }}
+        onConfirm={() => {
+          if (emailConfirmationBookingId) {
+            updateBookingStatus(emailConfirmationBookingId, 'confirmed', emailConfirmationLocation, emailConfirmationDate, emailConfirmationTime);
+            setEmailConfirmationModalOpen(false);
+            setEmailConfirmationBookingId('');
+            setEmailConfirmationLocation('');
+            setEmailConfirmationDate('');
+            setEmailConfirmationTime('');
+          }
+        }}
+        bookingName={emailConfirmationBookingId ? bookings.find(b => b.bookingId === emailConfirmationBookingId)?.name || '' : ''}
+        currentDate={emailConfirmationDate}
+        currentTime={emailConfirmationTime}
+        currentLocation={emailConfirmationLocation}
+        serviceType={emailConfirmationBookingId ? bookings.find(b => b.bookingId === emailConfirmationBookingId)?.serviceType || 'pp-initial-asel' : 'pp-initial-asel'}
       />
     </div>
   );

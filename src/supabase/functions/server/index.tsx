@@ -334,7 +334,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   const bookingId = c.req.param('id');
-  const { status, location, selectedDate, selectedTime } = parseResult.data;
+  const { status, location, selectedDate, selectedTime, sendEmail = true } = parseResult.data;
   
   // Validate status
   const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -347,6 +347,11 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   if (!existingBooking) {
     return c.json({ error: 'Booking not found' }, 404);
   }
+  
+  // Check if date or time has changed
+  const dateChanged = selectedDate && selectedDate !== existingBooking.selectedDate;
+  const timeChanged = selectedTime && selectedTime !== existingBooking.selectedTime;
+  const locationChanged = location && location !== existingBooking.location;
   
   // Update booking with new status and optionally location, date, and time
   const updatedBooking = {
@@ -363,7 +368,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   console.log(`Booking ${bookingId} status updated to: ${status}${location ? ` with location: ${location}` : ''}${selectedDate ? ` on date: ${selectedDate}` : ''}${selectedTime ? ` at time: ${selectedTime}` : ''}`);
   
   // Send automatic confirmation email to customer if status is "confirmed"
-  if (status === 'confirmed') {
+  if (status === 'confirmed' && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
@@ -640,7 +645,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   // Send automatic cancellation email to customer if status is "cancelled"
-  if (status === 'cancelled') {
+  if (status === 'cancelled' && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
@@ -795,6 +800,250 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     }
   }
   
+  // Send "appointment updated" email if date, time, or location changed (and status wasn't confirmed or cancelled)
+  if ((dateChanged || timeChanged || locationChanged) && status !== 'confirmed' && status !== 'cancelled' && sendEmail) {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+    
+    // Update Google Calendar event if it exists
+    if (updatedBooking.calendarEventId && calendarId && serviceAccountEmail && serviceAccountKey && (dateChanged || timeChanged)) {
+      try {
+        console.log(`📅 Updating Google Calendar event: ${updatedBooking.calendarEventId}`);
+        
+        // Get OAuth access token using Service Account
+        const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+        
+        // Parse the time range
+        let startTimeStr = updatedBooking.selectedTime;
+        let endTimeStr = updatedBooking.selectedTime;
+        
+        if (updatedBooking.selectedTime.includes(' - ')) {
+          const [start, end] = updatedBooking.selectedTime.split(' - ');
+          startTimeStr = start.trim();
+          endTimeStr = end.trim();
+        }
+        
+        // Parse start time
+        const startTimeParts = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (startTimeParts) {
+          let startHours = parseInt(startTimeParts[1]);
+          const startMinutes = parseInt(startTimeParts[2]);
+          const startPeriod = startTimeParts[3].toUpperCase();
+          
+          if (startPeriod === 'PM' && startHours !== 12) {
+            startHours += 12;
+          } else if (startPeriod === 'AM' && startHours === 12) {
+            startHours = 0;
+          }
+          
+          const startTimeString = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}:00`;
+          const dateTimeString = `${updatedBooking.selectedDate}T${startTimeString}`;
+          
+          // Parse end time
+          const endTimeParts = endTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+          if (endTimeParts) {
+            let endHours = parseInt(endTimeParts[1]);
+            const endMinutes = parseInt(endTimeParts[2]);
+            const endPeriod = endTimeParts[3].toUpperCase();
+            
+            if (endPeriod === 'PM' && endHours !== 12) {
+              endHours += 12;
+            } else if (endPeriod === 'AM' && endHours === 12) {
+              endHours = 0;
+            }
+            
+            const [year, month, day] = updatedBooking.selectedDate.split('-').map(Number);
+            let endDay = day;
+            let endMonth = month;
+            let endYear = year;
+            
+            if (endHours < startHours) {
+              endDay += 1;
+            }
+            
+            const endTimeString = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+            const endDateTimeString = `${endYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}T${endTimeString}`;
+            
+            const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+            
+            const updatedCalendarEvent = {
+              summary: `Checkride - ${updatedBooking.name}`,
+              description: `PRACTICAL TEST APPOINTMENT\\n\\nApplicant: ${updatedBooking.name}\\nEmail: ${updatedBooking.email}\\nPhone: ${updatedBooking.phone}\\nIACRA FTN: ${updatedBooking.iacraFtn}\\nAircraft: ${updatedBooking.aircraftMakeModel}\\n\\nService: ${serviceTypeLabel}\\nBooking ID: ${bookingId}`,
+              location: updatedBooking.location || 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
+              start: {
+                dateTime: dateTimeString,
+                timeZone: 'America/New_York',
+              },
+              end: {
+                dateTime: endDateTimeString,
+                timeZone: 'America/New_York',
+              },
+            };
+            
+            const calendarResponse = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${updatedBooking.calendarEventId}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedCalendarEvent),
+              }
+            );
+            
+            if (calendarResponse.ok) {
+              console.log(`✅ Google Calendar event updated for booking ${bookingId}`);
+            } else {
+              const errorText = await calendarResponse.text();
+              console.error('❌ Failed to update Google Calendar event:', errorText);
+            }
+          }
+        }
+      } catch (calendarError) {
+        console.error('❌ Error updating Google Calendar event:', calendarError);
+      }
+    }
+    
+    // Send appointment updated email
+    if (resendApiKey) {
+      try {
+        const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+        const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
+        
+        // Build a list of what changed
+        const changes = [];
+        if (dateChanged) changes.push('Date');
+        if (timeChanged) changes.push('Time');
+        if (locationChanged) changes.push('Location');
+        const changesText = changes.join(', ');
+        
+        const updateEmailHtml = `
+          <p>Dear ${updatedBooking.name},</p>
+          <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>updated</strong>.</p>
+          
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>📝 CHANGES MADE:</h3>
+          <p><strong>${changesText}</strong> updated for your appointment.</p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>UPDATED APPOINTMENT DETAILS:</h3>
+          <p>
+            <strong>Service:</strong> ${serviceTypeLabel}<br>
+            <strong>Date:</strong> ${formattedDate}<br>
+            <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
+            <strong>Location:</strong> ${locationForEmail}
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>APPLICANT INFORMATION:</h3>
+          <p>
+            <strong>Name:</strong> ${updatedBooking.name}<br>
+            <strong>Email Address:</strong> ${updatedBooking.email}<br>
+            <strong>Phone Number:</strong> ${updatedBooking.phone}<br>
+            <strong>IACRA FTN:</strong> ${updatedBooking.iacraFtn}<br>
+            <strong>Aircraft:</strong> ${updatedBooking.aircraftMakeModel}
+          </p>
+          <p>Please advise if any of this information is incorrect.</p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <h3>WHAT TO PREPARE:</h3>
+          <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
+          
+          <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">
+          
+          <p>If you have any questions about this change or need to discuss further modifications, please contact me:</p>
+          <p>
+            <strong>Phone:</strong> 860-912-3283<br>
+            <strong>Email:</strong> RyanGauthierDPE@gmail.com
+          </p>
+          
+          <p>I look forward to seeing you on ${formattedDate} at ${updatedBooking.selectedTime}!</p>
+          
+          <p>All the best,</p>
+          <p>Ryan</p>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
+            --<br>
+            <strong>Ryan Gauthier</strong><br>
+            Designated Pilot Examiner (DPE)<br>
+            Boston FSDO: EA-61<br>
+            Email: RyanGauthierDPE@gmail.com<br>
+            Phone: 860-912-3283
+          </p>
+        `;
+        
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
+            to: [updatedBooking.email],
+            cc: ['ryangauthierdpe@gmail.com'],
+            subject: `Appointment Updated - ${formattedDate}`,
+            html: updateEmailHtml,
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log(`✅ Appointment update email sent to ${updatedBooking.email} for booking ${bookingId}`);
+        } else {
+          console.error('❌ Failed to send appointment update email:', result);
+          
+          // Fallback if domain verification error
+          if (result.statusCode === 403 && result.message?.includes('verify a domain')) {
+            try {
+              const fallbackResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+                  to: ['ryangauthierdpe@gmail.com'],
+                  subject: `[COPY FOR YOUR RECORDS] Appointment Updated - ${updatedBooking.name} on ${formattedDate}`,
+                  html: `
+                    <p><strong>⚠️ Note:</strong> This is a copy of the update email that should have been sent to ${updatedBooking.email}. 
+                    Please forward this manually or contact the applicant directly.</p>
+                    <hr style="margin: 20px 0;">
+                    ${updateEmailHtml}
+                  `,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                console.log(`✅ Fallback appointment update email sent to ryangauthierdpe@gmail.com`);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Failed to send fallback appointment update email:', fallbackError);
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending appointment update email:', emailError);
+      }
+    }
+  }
+  
   return c.json({ 
     success: true, 
     booking: updatedBooking,
@@ -906,6 +1155,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
 app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   try {
     const bookingId = c.req.param('id');
+    const sendEmail = c.req.query('sendEmail') !== 'false'; // Default to true unless explicitly set to 'false'
     const booking = await kv.get(bookingId);
     
     if (!booking) {
@@ -948,7 +1198,7 @@ app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     
     // Send cancellation email to applicant
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (resendApiKey) {
+    if (resendApiKey && sendEmail) {
       try {
         const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
           weekday: 'long',
