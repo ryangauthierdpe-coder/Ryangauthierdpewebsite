@@ -390,49 +390,72 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         console.log('✅ Successfully obtained Google access token');
         console.log('🔑 Access token (first 20 chars):', accessToken.substring(0, 20) + '...');
         
-        // Parse the time correctly (e.g., "9:00 AM" -> 09:00)
-        const timeParts = updatedBooking.selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-        if (!timeParts) {
-          throw new Error('Invalid time format');
+        // Parse the time range (e.g., "9:00 AM - 3:00 PM")
+        // selectedTime could be just start time or a range
+        let startTimeStr = updatedBooking.selectedTime;
+        let endTimeStr = updatedBooking.selectedTime;
+        
+        if (updatedBooking.selectedTime.includes(' - ')) {
+          const [start, end] = updatedBooking.selectedTime.split(' - ');
+          startTimeStr = start.trim();
+          endTimeStr = end.trim();
         }
         
-        let hours = parseInt(timeParts[1]);
-        const minutes = parseInt(timeParts[2]);
-        const period = timeParts[3].toUpperCase();
-        
-        // Convert to 24-hour format
-        if (period === 'PM' && hours !== 12) {
-          hours += 12;
-        } else if (period === 'AM' && hours === 12) {
-          hours = 0;
+        // Parse start time
+        const startTimeParts = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!startTimeParts) {
+          throw new Error('Invalid start time format');
         }
         
-        // Create proper datetime string (YYYY-MM-DDTHH:mm:ss)
-        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-        const dateTimeString = `${updatedBooking.selectedDate}T${timeString}`;
+        let startHours = parseInt(startTimeParts[1]);
+        const startMinutes = parseInt(startTimeParts[2]);
+        const startPeriod = startTimeParts[3].toUpperCase();
         
-        // Calculate end time (assuming 4 hours for checkride, 1 hour for admin)
-        const durationHours = updatedBooking.serviceType === 'checkride' ? 6 : 1;
+        // Convert start time to 24-hour format
+        if (startPeriod === 'PM' && startHours !== 12) {
+          startHours += 12;
+        } else if (startPeriod === 'AM' && startHours === 12) {
+          startHours = 0;
+        }
         
-        // Parse start time and calculate end time
+        // Create proper datetime string for start (YYYY-MM-DDTHH:mm:ss)
+        const startTimeString = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}:00`;
+        const dateTimeString = `${updatedBooking.selectedDate}T${startTimeString}`;
+        
+        // Parse end time
+        const endTimeParts = endTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!endTimeParts) {
+          throw new Error('Invalid end time format');
+        }
+        
+        let endHours = parseInt(endTimeParts[1]);
+        const endMinutes = parseInt(endTimeParts[2]);
+        const endPeriod = endTimeParts[3].toUpperCase();
+        
+        // Convert end time to 24-hour format
+        if (endPeriod === 'PM' && endHours !== 12) {
+          endHours += 12;
+        } else if (endPeriod === 'AM' && endHours === 12) {
+          endHours = 0;
+        }
+        
+        // Create proper datetime string for end
         const [year, month, day] = updatedBooking.selectedDate.split('-').map(Number);
-        let endHours = hours + durationHours;
         let endDay = day;
         let endMonth = month;
         let endYear = year;
         
-        // Handle day overflow
-        if (endHours >= 24) {
-          endHours -= 24;
+        // Handle day overflow if end time is earlier than start time (next day)
+        if (endHours < startHours) {
           endDay += 1;
           // Simple day overflow (not handling month/year overflow for simplicity)
         }
         
-        const endTimeString = `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+        const endTimeString = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
         const endDateTimeString = `${endYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}T${endTimeString}`;
         
         const calendarEvent = {
-          summary: `${updatedBooking.serviceType === 'checkride' ? 'Checkride' : 'Admin'} - ${updatedBooking.name}`,
+          summary: `Checkride - ${updatedBooking.name}`,
           description: `PRACTICAL TEST APPOINTMENT\n\nApplicant: ${updatedBooking.name}\nEmail: ${updatedBooking.email}\nPhone: ${updatedBooking.phone}\nIACRA FTN: ${updatedBooking.iacraFtn}\nAircraft: ${updatedBooking.aircraftMakeModel}\n\nService: ${updatedBooking.serviceType}\nBooking ID: ${bookingId}`,
           location: 'Westerly State Airport (WST), 56 Airport Road, Westerly, RI 02891',
           start: {
