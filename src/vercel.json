@@ -1,7 +1,21 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null,
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/plane-icon.svg",
+      "dest": "/plane-icon.svg"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
