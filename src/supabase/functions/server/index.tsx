@@ -409,6 +409,39 @@ app.get("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
 });
 
+// Create a manual booking (from admin portal)
+app.post("/make-server-e4d9f7d7/bookings/manual", async (c) => {
+  const parseResult = await safeJsonParse(c);
+  if (parseResult.error) {
+    return c.json({ error: parseResult.error }, parseResult.status);
+  }
+  
+  const bookingData = parseResult.data;
+  
+  // Generate unique booking ID
+  const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Create booking object with timestamp and status (automatically confirmed)
+  const booking = {
+    ...bookingData,
+    bookingId,
+    createdAt: new Date().toISOString(),
+    status: 'confirmed', // Manual bookings are automatically confirmed
+    manuallyCreated: true
+  };
+  
+  // Save to database
+  await kv.set(bookingId, booking);
+  
+  console.log('Manual booking created:', bookingId);
+  
+  return c.json({ 
+    success: true, 
+    bookingId,
+    booking 
+  });
+});
+
 // Update booking status
 app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   const parseResult = await safeJsonParse(c);

@@ -566,6 +566,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       console.log('Manual booking created successfully:', data);
       setBookingCreationSuccess(true);
       
+      // Reload bookings to show the new one
+      await fetchBookings();
+      
       // Reset form
       setManualBookingData({
         name: '',
