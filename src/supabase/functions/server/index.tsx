@@ -421,12 +421,12 @@ app.post("/make-server-e4d9f7d7/bookings/manual", async (c) => {
   // Generate unique booking ID
   const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // Create booking object with timestamp and status (automatically confirmed)
+  // Create booking object with timestamp and status
   const booking = {
     ...bookingData,
     bookingId,
     createdAt: new Date().toISOString(),
-    status: 'confirmed', // Manual bookings are automatically confirmed
+    status: 'pending', // Manual bookings start as pending, admin confirms them
     manuallyCreated: true
   };
   
