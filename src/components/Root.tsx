@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router';
 import { ChatBox } from './chat-box';
 import { Menu, X, CalendarCheck } from 'lucide-react';
 import { AdminPage } from './admin-page';
+import { AnalyticsTracker } from './AnalyticsTracker';
 
 export function Root() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,6 +52,7 @@ export function Root() {
 
   return (
     <div className="min-h-screen bg-white">
+      <AnalyticsTracker />
       <nav className="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
