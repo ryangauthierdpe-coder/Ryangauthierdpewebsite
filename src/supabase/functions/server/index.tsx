@@ -708,7 +708,9 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>
             <strong>Date:</strong> ${formattedDate}<br>
             <strong>Time:</strong> ${updatedBooking.selectedTime}<br>
-            <strong>Location:</strong> ${locationForEmail}
+            <strong>Location:</strong> ${locationForEmail}<br>
+            <strong>Service Type:</strong> ${serviceTypeLabel}${updatedBooking.retestCertType ? `<br><strong>Retest For:</strong> ${updatedBooking.retestCertType}` : ''}<br>
+            <strong>Exam Fee:</strong> $${updatedBooking.examFee || 'TBD'}
           </p>
           
           <div style=\"text-align: center; margin: 20px 0;\">
@@ -752,6 +754,13 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           
           <p>All the best,</p>
           <p>Ryan</p>
+          
+          <div style=\\\"text-align: center; margin: 30px 0;\\\">
+            <a href=\\\"${calendarUrl}\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\" style=\\\"display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;\\\">
+              📅 Add to Google Calendar
+            </a>
+            <p style=\\\"font-size: 12px; color: #666; margin-top: 8px;\\\">Click the button above to add this appointment to your personal calendar</p>
+          </div>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
             --<br>
