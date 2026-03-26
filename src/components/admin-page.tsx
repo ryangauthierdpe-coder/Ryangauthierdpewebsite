@@ -61,7 +61,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     selectedTime: '',
     notes: '',
     retestCertificationType: '',
-    examFee: ''
+    examFee: '',
+    startTime: '',
+    endTime: ''
   });
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [bookingCreationSuccess, setBookingCreationSuccess] = useState(false);
@@ -576,7 +578,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         selectedTime: '',
         notes: '',
         retestCertificationType: '',
-        examFee: ''
+        examFee: '',
+        startTime: '',
+        endTime: ''
       });
 
       // Hide form after 2 seconds
@@ -819,26 +823,156 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                     <label htmlFor="booking-start-time" className="block font-semibold mb-2 text-gray-700">
                       Start Time <span className="text-red-600">*</span>
                     </label>
-                    <input
-                      type="time"
+                    <select
                       id="booking-start-time"
-                      value={manualBookingData.selectedTime}
-                      onChange={(e) => setManualBookingData({ ...manualBookingData, selectedTime: e.target.value })}
+                      value={manualBookingData.startTime}
+                      onChange={(e) => {
+                        const start = e.target.value;
+                        const end = manualBookingData.endTime;
+                        const selectedTime = start && end ? `${start} - ${end}` : '';
+                        setManualBookingData({ ...manualBookingData, startTime: start, selectedTime });
+                      }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
+                    >
+                      <option value="">Select start time...</option>
+                      <option value="6:00 AM">6:00 AM</option>
+                      <option value="6:15 AM">6:15 AM</option>
+                      <option value="6:30 AM">6:30 AM</option>
+                      <option value="6:45 AM">6:45 AM</option>
+                      <option value="7:00 AM">7:00 AM</option>
+                      <option value="7:15 AM">7:15 AM</option>
+                      <option value="7:30 AM">7:30 AM</option>
+                      <option value="7:45 AM">7:45 AM</option>
+                      <option value="8:00 AM">8:00 AM</option>
+                      <option value="8:15 AM">8:15 AM</option>
+                      <option value="8:30 AM">8:30 AM</option>
+                      <option value="8:45 AM">8:45 AM</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="9:15 AM">9:15 AM</option>
+                      <option value="9:30 AM">9:30 AM</option>
+                      <option value="9:45 AM">9:45 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="10:15 AM">10:15 AM</option>
+                      <option value="10:30 AM">10:30 AM</option>
+                      <option value="10:45 AM">10:45 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="11:15 AM">11:15 AM</option>
+                      <option value="11:30 AM">11:30 AM</option>
+                      <option value="11:45 AM">11:45 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="12:15 PM">12:15 PM</option>
+                      <option value="12:30 PM">12:30 PM</option>
+                      <option value="12:45 PM">12:45 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="1:15 PM">1:15 PM</option>
+                      <option value="1:30 PM">1:30 PM</option>
+                      <option value="1:45 PM">1:45 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="2:15 PM">2:15 PM</option>
+                      <option value="2:30 PM">2:30 PM</option>
+                      <option value="2:45 PM">2:45 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="3:15 PM">3:15 PM</option>
+                      <option value="3:30 PM">3:30 PM</option>
+                      <option value="3:45 PM">3:45 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="4:15 PM">4:15 PM</option>
+                      <option value="4:30 PM">4:30 PM</option>
+                      <option value="4:45 PM">4:45 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                      <option value="5:15 PM">5:15 PM</option>
+                      <option value="5:30 PM">5:30 PM</option>
+                      <option value="5:45 PM">5:45 PM</option>
+                      <option value="6:00 PM">6:00 PM</option>
+                      <option value="6:15 PM">6:15 PM</option>
+                      <option value="6:30 PM">6:30 PM</option>
+                      <option value="6:45 PM">6:45 PM</option>
+                      <option value="7:00 PM">7:00 PM</option>
+                      <option value="7:15 PM">7:15 PM</option>
+                      <option value="7:30 PM">7:30 PM</option>
+                      <option value="7:45 PM">7:45 PM</option>
+                      <option value="8:00 PM">8:00 PM</option>
+                    </select>
                   </div>
 
                   <div>
                     <label htmlFor="booking-end-time" className="block font-semibold mb-2 text-gray-700">
                       End Time <span className="text-red-600">*</span>
                     </label>
-                    <input
-                      type="time"
+                    <select
                       id="booking-end-time"
-                      value={manualBookingData.selectedTime}
-                      onChange={(e) => setManualBookingData({ ...manualBookingData, selectedTime: e.target.value })}
+                      value={manualBookingData.endTime}
+                      onChange={(e) => {
+                        const end = e.target.value;
+                        const start = manualBookingData.startTime;
+                        const selectedTime = start && end ? `${start} - ${end}` : '';
+                        setManualBookingData({ ...manualBookingData, endTime: end, selectedTime });
+                      }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
+                    >
+                      <option value="">Select end time...</option>
+                      <option value="6:00 AM">6:00 AM</option>
+                      <option value="6:15 AM">6:15 AM</option>
+                      <option value="6:30 AM">6:30 AM</option>
+                      <option value="6:45 AM">6:45 AM</option>
+                      <option value="7:00 AM">7:00 AM</option>
+                      <option value="7:15 AM">7:15 AM</option>
+                      <option value="7:30 AM">7:30 AM</option>
+                      <option value="7:45 AM">7:45 AM</option>
+                      <option value="8:00 AM">8:00 AM</option>
+                      <option value="8:15 AM">8:15 AM</option>
+                      <option value="8:30 AM">8:30 AM</option>
+                      <option value="8:45 AM">8:45 AM</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="9:15 AM">9:15 AM</option>
+                      <option value="9:30 AM">9:30 AM</option>
+                      <option value="9:45 AM">9:45 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="10:15 AM">10:15 AM</option>
+                      <option value="10:30 AM">10:30 AM</option>
+                      <option value="10:45 AM">10:45 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="11:15 AM">11:15 AM</option>
+                      <option value="11:30 AM">11:30 AM</option>
+                      <option value="11:45 AM">11:45 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="12:15 PM">12:15 PM</option>
+                      <option value="12:30 PM">12:30 PM</option>
+                      <option value="12:45 PM">12:45 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="1:15 PM">1:15 PM</option>
+                      <option value="1:30 PM">1:30 PM</option>
+                      <option value="1:45 PM">1:45 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="2:15 PM">2:15 PM</option>
+                      <option value="2:30 PM">2:30 PM</option>
+                      <option value="2:45 PM">2:45 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="3:15 PM">3:15 PM</option>
+                      <option value="3:30 PM">3:30 PM</option>
+                      <option value="3:45 PM">3:45 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="4:15 PM">4:15 PM</option>
+                      <option value="4:30 PM">4:30 PM</option>
+                      <option value="4:45 PM">4:45 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                      <option value="5:15 PM">5:15 PM</option>
+                      <option value="5:30 PM">5:30 PM</option>
+                      <option value="5:45 PM">5:45 PM</option>
+                      <option value="6:00 PM">6:00 PM</option>
+                      <option value="6:15 PM">6:15 PM</option>
+                      <option value="6:30 PM">6:30 PM</option>
+                      <option value="6:45 PM">6:45 PM</option>
+                      <option value="7:00 PM">7:00 PM</option>
+                      <option value="7:15 PM">7:15 PM</option>
+                      <option value="7:30 PM">7:30 PM</option>
+                      <option value="7:45 PM">7:45 PM</option>
+                      <option value="8:00 PM">8:00 PM</option>
+                      <option value="8:15 PM">8:15 PM</option>
+                      <option value="8:30 PM">8:30 PM</option>
+                      <option value="8:45 PM">8:45 PM</option>
+                      <option value="9:00 PM">9:00 PM</option>
+                    </select>
                   </div>
                 </div>
 
@@ -880,7 +1014,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       selectedTime: '',
                       notes: '',
                       retestCertificationType: '',
-                      examFee: ''
+                      examFee: '',
+                      startTime: '',
+                      endTime: ''
                     });
                   }}
                   className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
