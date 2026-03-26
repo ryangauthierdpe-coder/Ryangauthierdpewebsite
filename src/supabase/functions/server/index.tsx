@@ -695,6 +695,35 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         // Use custom location if provided, otherwise default to Westerly State Airport
         const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
         
+        // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
+        const startTimeOnly = updatedBooking.selectedTime.split(' - ')[0];
+        
+        // Determine arrival instructions based on location
+        let arrivalInstructionsHtml = '';
+        const location = updatedBooking.location || '';
+        
+        if (location.includes('WST') || location.includes('Westerly')) {
+          arrivalInstructionsHtml = `
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>ARRIVAL INFORMATION:</h3>
+          <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
+          <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
+          <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out. I look forward to meeting you.</p>
+          `;
+        } else if (location.includes('GON') || location.includes('Groton')) {
+          arrivalInstructionsHtml = `
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>ARRIVAL INFORMATION:</h3>
+          <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
+          <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
+          <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out. I look forward to meeting you.</p>
+          `;
+        }
+        
         // Generate Google Calendar URL
         const calendarUrl = generateGoogleCalendarUrlForEmail(updatedBooking, formattedDate, serviceTypeLabel);
         
@@ -732,6 +761,8 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           </p>
           <p>Please advise if any of this information is incorrect.</p>
           
+          ${arrivalInstructionsHtml}
+          
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
           
           <h3>WHAT TO PREPARE:</h3>
@@ -750,7 +781,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Email:</strong> RyanGauthierDPE@gmail.com
           </p>
           
-          <p>I look forward to seeing you on ${formattedDate} at ${updatedBooking.selectedTime}!</p>
+          <p>I look forward to seeing you on ${formattedDate} at ${startTimeOnly}!</p>
           
           <p>All the best,</p>
           <p>Ryan</p>
@@ -1249,6 +1280,9 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
         const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
         
+        // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
+        const startTimeOnly = updatedBooking.selectedTime.split(' - ')[0];
+        
         // Highlight style for changed fields
         const highlightStyle = 'background-color: #fef3c7; padding: 2px 6px; border-radius: 3px; font-weight: bold;';
         
@@ -1291,7 +1325,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Email:</strong> RyanGauthierDPE@gmail.com
           </p>
           
-          <p>I look forward to seeing you on ${formattedDate} at ${updatedBooking.selectedTime}!</p>
+          <p>I look forward to seeing you on ${formattedDate} at ${startTimeOnly}!</p>
           
           <p>All the best,</p>
           <p>Ryan</p>
@@ -1514,6 +1548,9 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
       day: 'numeric'
     });
     
+    // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
+    const startTimeOnly = booking.selectedTime.split(' - ')[0];
+    
     // Prepare email content
     const emailHtml = `
       <p>Dear ${booking.name},</p>
@@ -1540,7 +1577,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
         <strong>Email:</strong> RyanGauthierDPE@gmail.com
       </p>
       
-      <p>I look forward to seeing you on ${formattedDate} at ${booking.selectedTime}!</p>
+      <p>I look forward to seeing you on ${formattedDate} at ${startTimeOnly}!</p>
       
       <p>All the best,</p>
       <p>Ryan</p>
