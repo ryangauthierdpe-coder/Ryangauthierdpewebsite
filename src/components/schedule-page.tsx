@@ -12,6 +12,7 @@ interface BookingFormData {
   serviceType: string;
   selectedDate: string;
   selectedTime: string;
+  retestCertificationType?: string; // For retest services only
 }
 
 interface BusyTime {
@@ -29,6 +30,8 @@ const SERVICE_DURATIONS: { [key: string]: number } = {
   'cp-initial-asel': 6,
   'cp-initial-amel': 6,
   'cp-added-class': 4,
+  'retest-flight-only': 3,
+  'retest-ground-flight': 5,
   'foreign': 1,
   'military': 1,
   'cfi-renewal': 1,
@@ -182,6 +185,22 @@ export function SchedulePage() {
         { start: 12, end: 16, label: '12:00 PM - 4:00 PM' },
         { start: 13, end: 17, label: '1:00 PM - 5:00 PM' },
       ];
+    } else if (duration === 3) {
+      return [
+        { start: 9, end: 12, label: '9:00 AM - 12:00 PM' },
+        { start: 10, end: 13, label: '10:00 AM - 1:00 PM' },
+        { start: 11, end: 14, label: '11:00 AM - 2:00 PM' },
+        { start: 12, end: 15, label: '12:00 PM - 3:00 PM' },
+        { start: 13, end: 16, label: '1:00 PM - 4:00 PM' },
+        { start: 14, end: 17, label: '2:00 PM - 5:00 PM' },
+      ];
+    } else if (duration === 5) {
+      return [
+        { start: 9, end: 14, label: '9:00 AM - 2:00 PM' },
+        { start: 10, end: 15, label: '10:00 AM - 3:00 PM' },
+        { start: 11, end: 16, label: '11:00 AM - 4:00 PM' },
+        { start: 12, end: 17, label: '12:00 PM - 5:00 PM' },
+      ];
     } else if (duration === 1) {
       return [
         { start: 9, end: 10, label: '9:00 AM - 10:00 AM' },
@@ -203,7 +222,7 @@ export function SchedulePage() {
     const today = new Date();
     const daysToShow = showAllDates ? 60 : 24;
 
-    for (let i = 10; i < daysToShow; i++) {
+    for (let i = 5; i < daysToShow; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
@@ -405,28 +424,32 @@ export function SchedulePage() {
             >
               <option value="">Select a service...</option>
               <optgroup label="Private Pilot Certificate">
-                <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL) ($950) - 6 hours</option>
-                <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL) ($1,000) - 6 hours</option>
-                <option value="pp-added-class">Added Category or Class Rating ($850) - 4 hours</option>
+                <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL)</option>
+                <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL)</option>
+                <option value="pp-added-class">Added Category or Class Rating</option>
               </optgroup>
               <optgroup label="Instrument Rating">
-                <option value="ir-airplane">Instrument Rating Airplane ($950) - 6 hours</option>
+                <option value="ir-airplane">Instrument Rating Airplane</option>
               </optgroup>
               <optgroup label="Commercial Pilot Certificate">
-                <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL) ($1,000) - 6 hours</option>
-                <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL) ($1,100) - 6 hours</option>
-                <option value="cp-added-class">Added Category or Class Rating ($850) - 4 hours</option>
+                <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL)</option>
+                <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL)</option>
+                <option value="cp-added-class">Added Category or Class Rating</option>
+              </optgroup>
+              <optgroup label="Retests">
+                <option value="retest-flight-only">Retest - Flight Portion Only</option>
+                <option value="retest-ground-flight">Retest - Ground and Flight Portion</option>
               </optgroup>
               <optgroup label="Administrative Functions">
-                <option value="foreign">Foreign Pilot ($400) - 1 hour</option>
-                <option value="military">Military Competency ($250) - 1 hour</option>
-                <option value="cfi-renewal">Flight Instructor Renewal ($150) - 1 hour</option>
-                <option value="ground-instructor">Ground Instructor ($150) - 1 hour</option>
-                <option value="sic">SIC Type Ratings ($250) - 1 hour</option>
-                <option value="soe">SOE Limitation Removals ($250) - 1 hour</option>
-                <option value="atp">ATP Limitation Removals ($150) - 1 hour</option>
-                <option value="remote">Remote Pilot Certificate ($150) - 1 hour</option>
-                <option value="night">Night Flight Limitation Removals ($150) - 1 hour</option>
+                <option value="foreign">Foreign Pilot</option>
+                <option value="military">Military Competency</option>
+                <option value="cfi-renewal">Flight Instructor Renewal</option>
+                <option value="ground-instructor">Ground Instructor</option>
+                <option value="sic">SIC Type Ratings</option>
+                <option value="soe">SOE Limitation Removals</option>
+                <option value="atp">ATP Limitation Removals</option>
+                <option value="remote">Remote Pilot Certificate</option>
+                <option value="night">Night Flight Limitation Removals</option>
               </optgroup>
             </select>
             {formData.serviceType && (
@@ -437,6 +460,44 @@ export function SchedulePage() {
               </div>
             )}
           </div>
+
+          {/* Conditional dropdown for retest certification type */}
+          {(formData.serviceType === 'retest-flight-only' || formData.serviceType === 'retest-ground-flight') && (
+            <div className="max-w-2xl mt-6">
+              <label htmlFor="retestCertificationType" className="block font-semibold mb-2">
+                Which test are you seeking a retest for? <span className="text-red-600">*</span>
+              </label>
+              <select
+                id="retestCertificationType"
+                name="retestCertificationType"
+                required
+                value={formData.retestCertificationType || ''}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="">Select the original test...</option>
+                <optgroup label="Private Pilot">
+                  <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL)</option>
+                  <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL)</option>
+                </optgroup>
+                <optgroup label="Instrument Rating">
+                  <option value="ir-airplane">Instrument Rating Airplane</option>
+                </optgroup>
+                <optgroup label="Commercial Pilot">
+                  <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL)</option>
+                  <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL)</option>
+                </optgroup>
+              </select>
+              {formData.retestCertificationType && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 font-semibold">
+                    ✓ Retest for: {formData.retestCertificationType.includes('pp-') ? 'Private Pilot' : formData.retestCertificationType.includes('ir-') ? 'Instrument Rating' : 'Commercial Pilot'}
+                    {formData.retestCertificationType.includes('asel') ? ' - ASEL' : formData.retestCertificationType.includes('amel') ? ' - AMEL' : ''}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Date and Time Selection - STEP 2 */}

@@ -417,7 +417,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   const bookingId = c.req.param('id');
-  const { status, location, selectedDate, selectedTime, sendEmail = true } = parseResult.data;
+  const { status, location, selectedDate, selectedTime, notes, sendEmail = true } = parseResult.data;
   
   // Validate status
   const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -441,13 +441,14 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   const isChangingToConfirmed = statusChanged && status === 'confirmed';
   const isChangingToCancelled = statusChanged && status === 'cancelled';
   
-  // Update booking with new status and optionally location, date, and time
+  // Update booking with new status and optionally location, date, time, and notes
   const updatedBooking = {
     ...existingBooking,
     status,
     ...(location && { location }),
     ...(selectedDate && { selectedDate }),
     ...(selectedTime && { selectedTime }),
+    ...(notes !== undefined && { notes }),
     updatedAt: new Date().toISOString()
   };
   
@@ -1852,6 +1853,97 @@ app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
   } catch (error) {
     console.error('Error fetching Google Calendar busy times:', error);
     return c.json({ error: 'Failed to fetch calendar busy times', details: error.message }, 500);
+  }
+});
+
+// Create a manual calendar event
+app.post("/make-server-e4d9f7d7/calendar/create-event", async (c) => {
+  const parseResult = await safeJsonParse(c);
+  if (parseResult.error) {
+    return c.json({ error: parseResult.error }, parseResult.status);
+  }
+  
+  const { title, date, startTime, endTime, description } = parseResult.data;
+  
+  // Validate input
+  if (!title || !date || !startTime || !endTime) {
+    return c.json({ error: 'Title, date, start time, and end time are required' }, 400);
+  }
+  
+  try {
+    const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+    
+    if (!calendarId || !serviceAccountEmail || !serviceAccountKey) {
+      return c.json({ 
+        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY environment variables.' 
+      }, 500);
+    }
+    
+    // Get Google access token
+    const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
+    
+    // Parse date and times to create ISO datetime strings
+    // startTime and endTime are in format "HH:MM" (24-hour)
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    const startDateTime = new Date(date);
+    startDateTime.setHours(startHour, startMinute, 0, 0);
+    
+    const endDateTime = new Date(date);
+    endDateTime.setHours(endHour, endMinute, 0, 0);
+    
+    // Create event object for Google Calendar
+    const event = {
+      summary: title,
+      description: description || '',
+      start: {
+        dateTime: startDateTime.toISOString(),
+        timeZone: 'America/New_York',
+      },
+      end: {
+        dateTime: endDateTime.toISOString(),
+        timeZone: 'America/New_York',
+      },
+    };
+    
+    console.log('Creating calendar event:', event);
+    
+    // Create the event in Google Calendar
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(event),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Google Calendar API error:', data);
+      return c.json({ 
+        error: 'Failed to create calendar event', 
+        details: data.error?.message || 'Unknown error' 
+      }, 500);
+    }
+    
+    console.log('Calendar event created successfully:', data.id);
+    
+    return c.json({ 
+      success: true, 
+      eventId: data.id,
+      htmlLink: data.htmlLink,
+      message: 'Event created successfully' 
+    });
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    return c.json({ error: 'Failed to create calendar event', details: error.message }, 500);
   }
 });
 

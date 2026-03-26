@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit } from 'lucide-react';
+import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit, Plus, CheckCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { ConfirmBookingModal } from './confirm-booking-modal';
 import { EmailConfirmationModal } from './email-confirmation-modal';
@@ -17,6 +17,10 @@ interface Booking {
   createdAt: string;
   status: string;
   location?: string;
+  notes?: string;
+  retestCertificationType?: string;
+  isManualBooking?: boolean;
+  examFee?: string;
 }
 
 interface AdminPageProps {
@@ -43,6 +47,27 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [emailConfirmationLocation, setEmailConfirmationLocation] = useState<string>('');
   const [emailConfirmationDate, setEmailConfirmationDate] = useState<string>('');
   const [emailConfirmationTime, setEmailConfirmationTime] = useState<string>('');
+
+  // Manual booking creation state
+  const [showManualBookingForm, setShowManualBookingForm] = useState(false);
+  const [manualBookingData, setManualBookingData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    iacraFtn: '',
+    aircraftMakeModel: '',
+    serviceType: '',
+    selectedDate: '',
+    selectedTime: '',
+    notes: '',
+    retestCertificationType: '',
+    examFee: ''
+  });
+  const [creatingBooking, setCreatingBooking] = useState(false);
+  const [bookingCreationSuccess, setBookingCreationSuccess] = useState(false);
+  const [editingNotes, setEditingNotes] = useState<string>('');
+  const [notesValue, setNotesValue] = useState<string>('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -453,8 +478,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+      ...rows.map(row => row.map(cell => `\"${cell}\"`).join(','))
+    ].join('\\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -463,6 +488,110 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     link.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const saveNotes = async (bookingId: string) => {
+    setSavingNotes(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify({ 
+            status: bookings.find(b => b.bookingId === bookingId)?.status || 'pending',
+            notes: notesValue,
+            sendEmail: false
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save notes');
+      }
+
+      // Update local state
+      setBookings(prevBookings =>
+        prevBookings.map(b =>
+          b.bookingId === bookingId ? { ...b, notes: notesValue } : b
+        )
+      );
+
+      setEditingNotes('');
+      alert('Notes saved successfully!');
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      alert(err instanceof Error ? err.message : 'Failed to save notes');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const createManualBooking = async () => {
+    // Validate input
+    if (!manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setCreatingBooking(true);
+    setBookingCreationSuccess(false);
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/manual`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify(manualBookingData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create manual booking');
+      }
+
+      console.log('Manual booking created successfully:', data);
+      setBookingCreationSuccess(true);
+      
+      // Reset form
+      setManualBookingData({
+        name: '',
+        email: '',
+        phone: '',
+        iacraFtn: '',
+        aircraftMakeModel: '',
+        serviceType: '',
+        selectedDate: '',
+        selectedTime: '',
+        notes: '',
+        retestCertificationType: '',
+        examFee: ''
+      });
+
+      // Hide form after 2 seconds
+      setTimeout(() => {
+        setShowManualBookingForm(false);
+        setBookingCreationSuccess(false);
+      }, 2000);
+
+      alert('Manual booking created successfully!');
+    } catch (err) {
+      console.error('Error creating manual booking:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create manual booking');
+    } finally {
+      setCreatingBooking(false);
+    }
   };
 
   if (loading) {
@@ -492,6 +621,276 @@ export function AdminPage({ onLogout }: AdminPageProps) {
             <p className="text-red-800">{error}</p>
           </div>
         )}
+
+        {/* Manual Booking Creation Section */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowManualBookingForm(!showManualBookingForm)}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-semibold"
+          >
+            <Plus className="w-5 h-5" />
+            {showManualBookingForm ? 'Cancel' : 'Create Manual Booking'}
+          </button>
+
+          {showManualBookingForm && (
+            <div className="mt-4 bg-white border-2 border-indigo-200 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-indigo-900 mb-4">Create a Manual Booking</h3>
+              <p className="text-gray-600 mb-6">
+                Add a booking manually for applicants who have not used the online booking system.
+              </p>
+
+              {bookingCreationSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+                  <p className="text-green-800">Booking created successfully!</p>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label htmlFor="booking-name" className="block font-semibold mb-2 text-gray-700">
+                    Applicant Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-name"
+                    value={manualBookingData.name}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., John Doe"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="booking-email" className="block font-semibold mb-2 text-gray-700">
+                    Applicant Email <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="booking-email"
+                    value={manualBookingData.email}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., john.doe@example.com"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="booking-phone" className="block font-semibold mb-2 text-gray-700">
+                    Applicant Phone <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="booking-phone"
+                    value={manualBookingData.phone}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., (123) 456-7890"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="booking-iacra-ftn" className="block font-semibold mb-2 text-gray-700">
+                    IACRA FTN <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-iacra-ftn"
+                    value={manualBookingData.iacraFtn}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, iacraFtn: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., 123456789"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="booking-aircraft" className="block font-semibold mb-2 text-gray-700">
+                    Aircraft Make/Model <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-aircraft"
+                    value={manualBookingData.aircraftMakeModel}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, aircraftMakeModel: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Cessna 172"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="booking-exam-fee" className="block font-semibold mb-2 text-gray-700">
+                    Exam Fee (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-exam-fee"
+                    value={manualBookingData.examFee}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, examFee: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., $950"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="booking-service-type" className="block font-semibold mb-2 text-gray-700">
+                    Service Type <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    id="booking-service-type"
+                    value={manualBookingData.serviceType}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, serviceType: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Select a service...</option>
+                    <optgroup label="Private Pilot Certificate">
+                      <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL)</option>
+                      <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL)</option>
+                      <option value="pp-added-class">Added Category or Class Rating</option>
+                    </optgroup>
+                    <optgroup label="Instrument Rating">
+                      <option value="ir-airplane">Instrument Rating Airplane</option>
+                    </optgroup>
+                    <optgroup label="Commercial Pilot Certificate">
+                      <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL)</option>
+                      <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL)</option>
+                      <option value="cp-added-class">Added Category or Class Rating</option>
+                    </optgroup>
+                    <optgroup label="Retests">
+                      <option value="retest-flight-only">Retest - Flight Portion Only</option>
+                      <option value="retest-ground-flight">Retest - Ground and Flight Portion</option>
+                    </optgroup>
+                    <optgroup label="Administrative Functions">
+                      <option value="foreign">Foreign Pilot</option>
+                      <option value="military">Military Competency</option>
+                      <option value="cfi-renewal">Flight Instructor Renewal</option>
+                      <option value="ground-instructor">Ground Instructor</option>
+                      <option value="sic">SIC Type Ratings</option>
+                      <option value="soe">SOE Limitation Removals</option>
+                      <option value="atp">ATP Limitation Removals</option>
+                      <option value="remote">Remote Pilot Certificate</option>
+                      <option value="night">Night Flight Limitation Removals</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Conditional dropdown for retest certification type */}
+                {(manualBookingData.serviceType === 'retest-flight-only' || manualBookingData.serviceType === 'retest-ground-flight') && (
+                  <div className="md:col-span-2">
+                    <label htmlFor="booking-retest-cert-type" className="block font-semibold mb-2 text-gray-700">
+                      Which test are you seeking a retest for? <span className="text-red-600">*</span>
+                    </label>
+                    <select
+                      id="booking-retest-cert-type"
+                      value={manualBookingData.retestCertificationType}
+                      onChange={(e) => setManualBookingData({ ...manualBookingData, retestCertificationType: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Select the original test...</option>
+                      <optgroup label="Private Pilot">
+                        <option value="pp-initial-asel">Private Pilot - Airplane Single Engine Land (ASEL)</option>
+                        <option value="pp-initial-amel">Private Pilot - Airplane Multiengine Land (AMEL)</option>
+                      </optgroup>
+                      <optgroup label="Instrument Rating">
+                        <option value="ir-airplane">Instrument Rating Airplane</option>
+                      </optgroup>
+                      <optgroup label="Commercial Pilot">
+                        <option value="cp-initial-asel">Commercial Pilot - Airplane Single Engine Land (ASEL)</option>
+                        <option value="cp-initial-amel">Commercial Pilot - Airplane Multiengine Land (AMEL)</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="booking-date" className="block font-semibold mb-2 text-gray-700">
+                    Date <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="booking-date"
+                    value={manualBookingData.selectedDate}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, selectedDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="booking-start-time" className="block font-semibold mb-2 text-gray-700">
+                      Start Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="booking-start-time"
+                      value={manualBookingData.selectedTime}
+                      onChange={(e) => setManualBookingData({ ...manualBookingData, selectedTime: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="booking-end-time" className="block font-semibold mb-2 text-gray-700">
+                      End Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="booking-end-time"
+                      value={manualBookingData.selectedTime}
+                      onChange={(e) => setManualBookingData({ ...manualBookingData, selectedTime: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="booking-notes" className="block font-semibold mb-2 text-gray-700">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    id="booking-notes"
+                    value={manualBookingData.notes}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, notes: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Additional notes about this booking..."
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={createManualBooking}
+                  disabled={creatingBooking || !manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  {creatingBooking ? 'Creating...' : 'Create Booking'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowManualBookingForm(false);
+                    setManualBookingData({
+                      name: '',
+                      email: '',
+                      phone: '',
+                      iacraFtn: '',
+                      aircraftMakeModel: '',
+                      serviceType: '',
+                      selectedDate: '',
+                      selectedTime: '',
+                      notes: '',
+                      retestCertificationType: '',
+                      examFee: ''
+                    });
+                  }}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -660,6 +1059,65 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                               <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
                               <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
                             </div>
+                            {booking.examFee && (
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                <p className="text-gray-900">{booking.examFee}</p>
+                              </div>
+                            )}
+                            {booking.retestCertificationType && (
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
+                                <p className="text-gray-900">{booking.retestCertificationType}</p>
+                              </div>
+                            )}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-semibold text-gray-600 mb-2">Notes</label>
+                              {editingNotes === booking.bookingId ? (
+                                <div>
+                                  <textarea
+                                    value={notesValue}
+                                    onChange={(e) => setNotesValue(e.target.value)}
+                                    rows={4}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Add notes about this booking..."
+                                  />
+                                  <div className="mt-2 flex gap-2">
+                                    <button
+                                      onClick={() => saveNotes(booking.bookingId)}
+                                      disabled={savingNotes}
+                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                    >
+                                      {savingNotes ? 'Saving...' : 'Save Notes'}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingNotes('');
+                                        setNotesValue('');
+                                      }}
+                                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
+                                    {booking.notes || 'No notes added yet.'}
+                                  </p>
+                                  <button
+                                    onClick={() => {
+                                      setEditingNotes(booking.bookingId);
+                                      setNotesValue(booking.notes || '');
+                                    }}
+                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                  >
+                                    {booking.notes ? 'Edit Notes' : 'Add Notes'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Action Buttons */}
@@ -807,6 +1265,65 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                             <div className="md:col-span-2">
                               <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
                               <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
+                            </div>
+                            {booking.examFee && (
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                <p className="text-gray-700">{booking.examFee}</p>
+                              </div>
+                            )}
+                            {booking.retestCertificationType && (
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
+                                <p className="text-gray-700">{booking.retestCertificationType}</p>
+                              </div>
+                            )}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-semibold text-gray-600 mb-2">Notes</label>
+                              {editingNotes === booking.bookingId ? (
+                                <div>
+                                  <textarea
+                                    value={notesValue}
+                                    onChange={(e) => setNotesValue(e.target.value)}
+                                    rows={4}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Add notes about this booking..."
+                                  />
+                                  <div className="mt-2 flex gap-2">
+                                    <button
+                                      onClick={() => saveNotes(booking.bookingId)}
+                                      disabled={savingNotes}
+                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                    >
+                                      {savingNotes ? 'Saving...' : 'Save Notes'}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingNotes('');
+                                        setNotesValue('');
+                                      }}
+                                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
+                                    {booking.notes || 'No notes added yet.'}
+                                  </p>
+                                  <button
+                                    onClick={() => {
+                                      setEditingNotes(booking.bookingId);
+                                      setNotesValue(booking.notes || '');
+                                    }}
+                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                  >
+                                    {booking.notes ? 'Edit Notes' : 'Add Notes'}
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
