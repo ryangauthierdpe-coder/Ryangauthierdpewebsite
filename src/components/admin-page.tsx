@@ -159,11 +159,13 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL) - §61.129(a) ($1,000)',
       'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL) - §61.129(b) ($1,100)',
       'cp-added-class': 'Added Category or Class Rating - §61.63 ($850)',
+      'retest-flight-only': 'Retest - Flight Portion Only ($500)',
+      'retest-ground-flight': 'Retest - Ground and Flight Portion ($750)',
       'checkride-ppasel': 'Private Pilot - ASEL ($850)', // Legacy
       'checkride-ppamel': 'Private Pilot - AMEL ($950)', // Legacy
       'checkride-ir': 'Instrument Rating Airplane ($950)', // Legacy
       'checkride-cpasel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
-      'checkride-cpamel': 'Commercial Pilot - AMEL ($1,000)', // Legacy
+      'checkride-cpamel': 'Commercial Pilot - ASEL ($1,000)', // Legacy
       'checkride': 'Private Pilot ASEL Checkride ($850)', // Legacy support
       'foreign': 'Foreign Pilot ($400)',
       'military': 'Military Competency ($250)',
@@ -176,6 +178,18 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       'night': 'Night Flight Limitation Removals ($150)'
     };
     return labels[serviceType] || serviceType;
+  };
+
+  // Helper function to format retestCertificationType for display
+  const getRetestCertificationLabel = (certType: string) => {
+    const labels: { [key: string]: string } = {
+      'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL)',
+      'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL)',
+      'ir-airplane': 'Instrument Rating - Airplane',
+      'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL)',
+      'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL)',
+    };
+    return labels[certType] || certType;
   };
 
   const getStatusColor = (status: string) => {
@@ -1207,7 +1221,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                             {booking.retestCertificationType && (
                               <div className="md:col-span-2">
                                 <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
-                                <p className="text-gray-900">{booking.retestCertificationType}</p>
+                                <p className="text-gray-900">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
                               </div>
                             )}
                             <div className="md:col-span-2">
@@ -1414,7 +1428,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                             {booking.retestCertificationType && (
                               <div className="md:col-span-2">
                                 <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
-                                <p className="text-gray-700">{booking.retestCertificationType}</p>
+                                <p className="text-gray-700">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
                               </div>
                             )}
                             <div className="md:col-span-2">

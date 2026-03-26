@@ -43,6 +43,29 @@ const SERVICE_DURATIONS: { [key: string]: number } = {
   'night': 1,
 };
 
+// Service type labels mapping
+const SERVICE_TYPE_LABELS: { [key: string]: string } = {
+  'pp-initial-asel': 'Private Pilot - Airplane Single Engine Land (ASEL)',
+  'pp-initial-amel': 'Private Pilot - Airplane Multiengine Land (AMEL)',
+  'pp-added-class': 'Added Category or Class Rating',
+  'ir-airplane': 'Instrument Rating - Airplane',
+  'cp-initial-asel': 'Commercial Pilot - Airplane Single Engine Land (ASEL)',
+  'cp-initial-amel': 'Commercial Pilot - Airplane Multiengine Land (AMEL)',
+  'cp-added-class': 'Added Category or Class Rating',
+  'retest-flight-only': 'Retest - Flight Portion Only',
+  'retest-ground-flight': 'Retest - Ground and Flight Portion',
+  'foreign': 'Foreign Pilot',
+  'military': 'Military Competency',
+  'cfi-renewal': 'Flight Instructor Renewal',
+  'ground-instructor': 'Ground Instructor',
+  'sic': 'SIC Type Ratings',
+  'soe': 'SOE Limitation Removals',
+  'atp': 'ATP Limitation Removals',
+  'remote': 'Remote Pilot Certificate',
+  'night': 'Night Flight Limitation Removals',
+  'checkride': 'Private Pilot ASEL Checkride', // Legacy support
+};
+
 export function SchedulePage() {
   const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -269,8 +292,18 @@ export function SchedulePage() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Auto-scroll to date selection when service type is selected
+    // Auto-scroll to date selection when service type is selected (but not for retest types)
     if (name === 'serviceType' && value) {
+      // Don't scroll if it's a retest service type - wait for retestCertificationType to be filled
+      if (value !== 'retest-flight-only' && value !== 'retest-ground-flight') {
+        setTimeout(() => {
+          dateSelectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+    
+    // Auto-scroll to date selection when retestCertificationType is selected
+    if (name === 'retestCertificationType' && value) {
       setTimeout(() => {
         dateSelectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -309,9 +342,7 @@ export function SchedulePage() {
     const endHourStr = endHour.toString().padStart(2, '0');
     const endDateTime = `${year}${month}${day}T${endHourStr}0000`;
     
-    const serviceTypeLabel = data.serviceType === 'checkride' 
-      ? 'Private Pilot ASEL Checkride' 
-      : 'Pilot Examination - ' + data.serviceType;
+    const serviceTypeLabel = SERVICE_TYPE_LABELS[data.serviceType] || data.serviceType;
     
     const title = encodeURIComponent(`${serviceTypeLabel} - ${data.name}`);
     const details = encodeURIComponent(
@@ -491,8 +522,7 @@ export function SchedulePage() {
               {formData.retestCertificationType && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-blue-800 font-semibold">
-                    ✓ Retest for: {formData.retestCertificationType.includes('pp-') ? 'Private Pilot' : formData.retestCertificationType.includes('ir-') ? 'Instrument Rating' : 'Commercial Pilot'}
-                    {formData.retestCertificationType.includes('asel') ? ' - ASEL' : formData.retestCertificationType.includes('amel') ? ' - AMEL' : ''}
+                    ✓ Retest for: {SERVICE_TYPE_LABELS[formData.retestCertificationType] || formData.retestCertificationType}
                   </p>
                 </div>
               )}
