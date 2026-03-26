@@ -715,7 +715,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           
           <div style=\"text-align: center; margin: 20px 0;\">
             <a href=\"${calendarUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;\">
-              📅 Add to Google Calendar
+              📅 Add to Calendar
             </a>
             <p style=\"font-size: 12px; color: #666; margin-top: 8px;\">Click the button above to add this appointment to your personal calendar</p>
           </div>
@@ -756,10 +756,9 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Ryan</p>
           
           <div style=\\\"text-align: center; margin: 30px 0;\\\">
-            <a href=\\\"${calendarUrl}\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\" style=\\\"display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;\\\">
-              📅 Add to Google Calendar
+            <a href=\\\"${calendarUrl}\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\" style=\\\"display: inline-block; background-color: #10b981; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;\\\">
+              📅 Add to Calendar
             </a>
-            <p style=\\\"font-size: 12px; color: #666; margin-top: 8px;\\\">Click the button above to add this appointment to your personal calendar</p>
           </div>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
