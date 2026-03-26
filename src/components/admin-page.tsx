@@ -1223,23 +1223,34 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                         </button>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex items-center text-gray-700">
-                          <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
-                          <span className="font-semibold">{formatDate(booking.selectedDate)}</span>
+                      <div className="space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="flex items-center text-gray-700">
+                            <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
+                            <span className="font-semibold">{formatDate(booking.selectedDate)}</span>
+                          </div>
+                          <div className="flex items-center text-gray-700">
+                            <Clock className="w-5 h-5 mr-2 text-emerald-600" />
+                            <span>{booking.selectedTime}</span>
+                          </div>
+                          <div className="flex items-center text-gray-700">
+                            <Mail className="w-5 h-5 mr-2 text-emerald-600" />
+                            <a href={`mailto:${booking.email}`} className="hover:underline">{booking.email}</a>
+                          </div>
+                          <div className="flex items-center text-gray-700">
+                            <Phone className="w-5 h-5 mr-2 text-emerald-600" />
+                            <a href={`tel:${booking.phone}`} className="hover:underline">{booking.phone}</a>
+                          </div>
                         </div>
-                        <div className="flex items-center text-gray-700">
-                          <Clock className="w-5 h-5 mr-2 text-emerald-600" />
-                          <span>{booking.selectedTime}</span>
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <Mail className="w-5 h-5 mr-2 text-emerald-600" />
-                          <a href={`mailto:${booking.email}`} className="hover:underline">{booking.email}</a>
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <Phone className="w-5 h-5 mr-2 text-emerald-600" />
-                          <a href={`tel:${booking.phone}`} className="hover:underline">{booking.phone}</a>
-                        </div>
+                        {booking.location && (
+                          <div className="flex items-start text-gray-700 pt-2 border-t border-gray-100">
+                            <svg className="w-5 h-5 mr-2 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="text-sm">{booking.location}</span>
+                          </div>
+                        )}
                       </div>
 
                       {selectedBooking?.bookingId === booking.bookingId && (
@@ -1576,23 +1587,34 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                         </button>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex items-center text-gray-600">
-                          <Calendar className="w-5 h-5 mr-2 text-gray-400" />
-                          <span className="font-semibold">{formatDate(booking.selectedDate)}</span>
+                      <div className="space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="flex items-center text-gray-600">
+                            <Calendar className="w-5 h-5 mr-2 text-gray-400" />
+                            <span className="font-semibold">{formatDate(booking.selectedDate)}</span>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <Clock className="w-5 h-5 mr-2 text-gray-400" />
+                            <span>{booking.selectedTime}</span>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <Mail className="w-5 h-5 mr-2 text-gray-400" />
+                            <a href={`mailto:${booking.email}`} className="hover:underline">{booking.email}</a>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <Phone className="w-5 h-5 mr-2 text-gray-400" />
+                            <a href={`tel:${booking.phone}`} className="hover:underline">{booking.phone}</a>
+                          </div>
                         </div>
-                        <div className="flex items-center text-gray-600">
-                          <Clock className="w-5 h-5 mr-2 text-gray-400" />
-                          <span>{booking.selectedTime}</span>
-                        </div>
-                        <div className="flex items-center text-gray-600">
-                          <Mail className="w-5 h-5 mr-2 text-gray-400" />
-                          <a href={`mailto:${booking.email}`} className="hover:underline">{booking.email}</a>
-                        </div>
-                        <div className="flex items-center text-gray-600">
-                          <Phone className="w-5 h-5 mr-2 text-gray-400" />
-                          <a href={`tel:${booking.phone}`} className="hover:underline">{booking.phone}</a>
-                        </div>
+                        {booking.location && (
+                          <div className="flex items-start text-gray-600 pt-2 border-t border-gray-100">
+                            <svg className="w-5 h-5 mr-2 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="text-sm">{booking.location}</span>
+                          </div>
+                        )}
                       </div>
 
                       {selectedBooking?.bookingId === booking.bookingId && (
