@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit, Plus, CheckCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { ConfirmBookingModal } from './confirm-booking-modal';
 import { EmailConfirmationModal } from './email-confirmation-modal';
 
 interface Booking {
@@ -40,8 +39,6 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [showDeleted, setShowDeleted] = useState(false);
   const [restoringBooking, setRestoringBooking] = useState<string>('');
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [bookingToConfirm, setBookingToConfirm] = useState<{ id: string; name: string; date: string; time: string; location?: string; serviceType: string } | null>(null);
   const [emailConfirmationModalOpen, setEmailConfirmationModalOpen] = useState(false);
   const [emailConfirmationBookingId, setEmailConfirmationBookingId] = useState<string>('');
   const [emailConfirmationLocation, setEmailConfirmationLocation] = useState<string>('');
@@ -63,13 +60,17 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     retestCertificationType: '',
     examFee: '',
     startTime: '',
-    endTime: ''
+    endTime: '',
+    location: 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891'
   });
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [bookingCreationSuccess, setBookingCreationSuccess] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string>('');
   const [notesValue, setNotesValue] = useState<string>('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editingBookingId, setEditingBookingId] = useState<string>('');
+  const [editingBookingData, setEditingBookingData] = useState<any>(null);
+  const [savingBooking, setSavingBooking] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -254,6 +255,45 @@ export function AdminPage({ onLogout }: AdminPageProps) {
       alert(err instanceof Error ? err.message : 'Failed to update booking status');
     } finally {
       setUpdatingStatus('');
+    }
+  };
+
+  const updateBooking = async (bookingId: string, updatedData: any) => {
+    setSavingBooking(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}/update-full`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify(updatedData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update booking');
+      }
+
+      // Update local state
+      setBookings(prevBookings =>
+        prevBookings.map(b =>
+          b.bookingId === bookingId ? { ...b, ...updatedData } : b
+        )
+      );
+
+      setEditingBookingId('');
+      setEditingBookingData(null);
+      alert('Booking updated successfully!');
+    } catch (err) {
+      console.error('Error updating booking:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update booking');
+    } finally {
+      setSavingBooking(false);
     }
   };
 
@@ -550,7 +590,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
   const createManualBooking = async () => {
     // Validate input
-    if (!manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime) {
+    if (!manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime || !manualBookingData.location) {
       alert('Please fill in all required fields');
       return;
     }
@@ -597,7 +637,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         retestCertificationType: '',
         examFee: '',
         startTime: '',
-        endTime: ''
+        endTime: '',
+        location: 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891'
       });
 
       // Hide form after 2 seconds
@@ -994,6 +1035,20 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                 </div>
 
                 <div className="md:col-span-2">
+                  <label htmlFor="booking-location" className="block font-semibold mb-2 text-gray-700">
+                    Meeting Location <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-location"
+                    value={manualBookingData.location}
+                    onChange={(e) => setManualBookingData({ ...manualBookingData, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
                   <label htmlFor="booking-notes" className="block font-semibold mb-2 text-gray-700">
                     Notes (Optional)
                   </label>
@@ -1011,7 +1066,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={createManualBooking}
-                  disabled={creatingBooking || !manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime}
+                  disabled={creatingBooking || !manualBookingData.name || !manualBookingData.email || !manualBookingData.phone || !manualBookingData.iacraFtn || !manualBookingData.aircraftMakeModel || !manualBookingData.serviceType || !manualBookingData.selectedDate || !manualBookingData.selectedTime || !manualBookingData.location}
                   className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Calendar className="w-4 h-4" />
@@ -1033,7 +1088,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       retestCertificationType: '',
                       examFee: '',
                       startTime: '',
-                      endTime: ''
+                      endTime: '',
+                      location: 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891'
                     });
                   }}
                   className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
@@ -1188,107 +1244,255 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
                       {selectedBooking?.bookingId === booking.bookingId && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
-                          <div className="grid md:grid-cols-2 gap-4 mb-6">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">IACRA FTN</label>
-                              <p className="text-gray-900">{booking.iacraFtn}</p>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Aircraft</label>
-                              <p className="text-gray-900 flex items-center">
-                                <Plane className="w-4 h-4 mr-2 text-emerald-600" />
-                                {booking.aircraftMakeModel}
-                              </p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Service Type</label>
-                              <p className="text-gray-900">{getServiceTypeLabel(booking.serviceType)}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Booking ID</label>
-                              <p className="text-gray-500 text-sm font-mono">{booking.bookingId}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
-                              <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
-                            </div>
-                            {booking.examFee && (
-                              <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
-                                <p className="text-gray-900">{booking.examFee}</p>
+                          {editingBookingId === booking.bookingId ? (
+                            // Edit Mode
+                            <div className="space-y-4">
+                              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                                <p className="text-sm text-blue-800 font-semibold">Editing Booking - Make your changes below</p>
                               </div>
-                            )}
-                            {booking.retestCertificationType && (
-                              <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
-                                <p className="text-gray-900">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
-                              </div>
-                            )}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-2">Notes</label>
-                              {editingNotes === booking.bookingId ? (
+
+                              <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                  <textarea
-                                    value={notesValue}
-                                    onChange={(e) => setNotesValue(e.target.value)}
-                                    rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Add notes about this booking..."
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
+                                  <input
+                                    type="date"
+                                    value={editingBookingData.selectedDate}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, selectedDate: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                   />
-                                  <div className="mt-2 flex gap-2">
-                                    <button
-                                      onClick={() => saveNotes(booking.bookingId)}
-                                      disabled={savingNotes}
-                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                                    >
-                                      {savingNotes ? 'Saving...' : 'Save Notes'}
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingNotes('');
-                                        setNotesValue('');
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <select
+                                      value={editingBookingData.startTime}
+                                      onChange={(e) => {
+                                        const start = e.target.value;
+                                        const end = editingBookingData.endTime;
+                                        setEditingBookingData({ 
+                                          ...editingBookingData, 
+                                          startTime: start,
+                                          selectedTime: start && end ? `${start} - ${end}` : start
+                                        });
                                       }}
-                                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                     >
-                                      Cancel
-                                    </button>
+                                      <option value="">Start...</option>
+                                      <option value="6:00 AM">6:00 AM</option>
+                                      <option value="7:00 AM">7:00 AM</option>
+                                      <option value="8:00 AM">8:00 AM</option>
+                                      <option value="9:00 AM">9:00 AM</option>
+                                      <option value="10:00 AM">10:00 AM</option>
+                                      <option value="11:00 AM">11:00 AM</option>
+                                      <option value="12:00 PM">12:00 PM</option>
+                                      <option value="1:00 PM">1:00 PM</option>
+                                      <option value="2:00 PM">2:00 PM</option>
+                                      <option value="3:00 PM">3:00 PM</option>
+                                      <option value="4:00 PM">4:00 PM</option>
+                                      <option value="5:00 PM">5:00 PM</option>
+                                      <option value="6:00 PM">6:00 PM</option>
+                                      <option value="7:00 PM">7:00 PM</option>
+                                      <option value="8:00 PM">8:00 PM</option>
+                                    </select>
+                                    <select
+                                      value={editingBookingData.endTime}
+                                      onChange={(e) => {
+                                        const end = e.target.value;
+                                        const start = editingBookingData.startTime;
+                                        setEditingBookingData({ 
+                                          ...editingBookingData, 
+                                          endTime: end,
+                                          selectedTime: start && end ? `${start} - ${end}` : end
+                                        });
+                                      }}
+                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                    >
+                                      <option value="">End...</option>
+                                      <option value="6:00 AM">6:00 AM</option>
+                                      <option value="7:00 AM">7:00 AM</option>
+                                      <option value="8:00 AM">8:00 AM</option>
+                                      <option value="9:00 AM">9:00 AM</option>
+                                      <option value="10:00 AM">10:00 AM</option>
+                                      <option value="11:00 AM">11:00 AM</option>
+                                      <option value="12:00 PM">12:00 PM</option>
+                                      <option value="1:00 PM">1:00 PM</option>
+                                      <option value="2:00 PM">2:00 PM</option>
+                                      <option value="3:00 PM">3:00 PM</option>
+                                      <option value="4:00 PM">4:00 PM</option>
+                                      <option value="5:00 PM">5:00 PM</option>
+                                      <option value="6:00 PM">6:00 PM</option>
+                                      <option value="7:00 PM">7:00 PM</option>
+                                      <option value="8:00 PM">8:00 PM</option>
+                                    </select>
                                   </div>
                                 </div>
-                              ) : (
-                                <div>
-                                  <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
-                                    {booking.notes || 'No notes added yet.'}
-                                  </p>
-                                  <button
-                                    onClick={() => {
-                                      setEditingNotes(booking.bookingId);
-                                      setNotesValue(booking.notes || '');
-                                    }}
-                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                  >
-                                    {booking.notes ? 'Edit Notes' : 'Add Notes'}
-                                  </button>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
+                                  <input
+                                    type="text"
+                                    value={editingBookingData.location || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, location: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                  <input
+                                    type="text"
+                                    value={editingBookingData.examFee || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, examFee: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="e.g., $950"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
+                                  <textarea
+                                    value={editingBookingData.notes || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, notes: e.target.value })}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Add notes about this booking..."
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3 pt-4">
+                                <button
+                                  onClick={() => {
+                                    const updatedData = {
+                                      selectedDate: editingBookingData.selectedDate,
+                                      selectedTime: editingBookingData.selectedTime,
+                                      location: editingBookingData.location,
+                                      examFee: editingBookingData.examFee,
+                                      notes: editingBookingData.notes
+                                    };
+                                    updateBooking(booking.bookingId, updatedData);
+                                  }}
+                                  disabled={savingBooking}
+                                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 font-semibold"
+                                >
+                                  {savingBooking ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingBookingId('');
+                                    setEditingBookingData(null);
+                                  }}
+                                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+
+                              <div className="border-t border-gray-200 pt-4 mt-4">
+                                <p className="text-sm text-gray-500 mb-2">Read-only information:</p>
+                                <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">IACRA FTN</label>
+                                    <p className="text-gray-700 text-sm">{booking.iacraFtn}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Aircraft</label>
+                                    <p className="text-gray-700 text-sm">{booking.aircraftMakeModel}</p>
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Service Type</label>
+                                    <p className="text-gray-700 text-sm">{getServiceTypeLabel(booking.serviceType)}</p>
+                                  </div>
+                                  {booking.retestCertificationType && (
+                                    <div className="md:col-span-2">
+                                      <label className="block text-xs font-semibold text-gray-500 mb-1">Retest For</label>
+                                      <p className="text-gray-700 text-sm">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // View Mode
+                            <div className="grid md:grid-cols-2 gap-4 mb-6">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">IACRA FTN</label>
+                                <p className="text-gray-900">{booking.iacraFtn}</p>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Aircraft</label>
+                                <p className="text-gray-900 flex items-center">
+                                  <Plane className="w-4 h-4 mr-2 text-emerald-600" />
+                                  {booking.aircraftMakeModel}
+                                </p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Service Type</label>
+                                <p className="text-gray-900">{getServiceTypeLabel(booking.serviceType)}</p>
+                              </div>
+                              {booking.retestCertificationType && (
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
+                                  <p className="text-gray-900">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
                                 </div>
                               )}
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
+                                <p className="text-gray-900">{formatDate(booking.selectedDate)}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
+                                <p className="text-gray-900">{booking.selectedTime}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
+                                <p className="text-gray-900">{booking.location || 'Not specified'}</p>
+                              </div>
+                              {booking.examFee && (
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                  <p className="text-gray-900">{booking.examFee}</p>
+                                </div>
+                              )}
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
+                                <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
+                                  {booking.notes || 'No notes added yet.'}
+                                </p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Booking ID</label>
+                                <p className="text-gray-500 text-sm font-mono">{booking.bookingId}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
+                                <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Action Buttons */}
                           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                             <button
                               onClick={() => {
-                                console.log('Opening modal with booking data:', {
-                                  date: booking.selectedDate,
-                                  time: booking.selectedTime,
-                                  location: booking.location
-                                });
-                                setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location, serviceType: booking.serviceType });
-                                setConfirmModalOpen(true);
+                                if (editingBookingId === booking.bookingId) {
+                                  setEditingBookingId('');
+                                  setEditingBookingData(null);
+                                } else {
+                                  setEditingBookingId(booking.bookingId);
+                                  setEditingBookingData({
+                                    ...booking,
+                                    startTime: booking.selectedTime.split(' - ')[0] || '',
+                                    endTime: booking.selectedTime.split(' - ')[1] || ''
+                                  });
+                                }
                               }}
                               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
                             >
                               <Edit className="w-4 h-4" />
-                              Edit Date/Time/Location
+                              {editingBookingId === booking.bookingId ? 'Cancel Edit' : 'Edit Booking'}
                             </button>
                             <div className="flex items-center gap-2">
                               <label className="text-sm font-semibold text-gray-600">Update Status:</label>
@@ -1296,11 +1500,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 value={booking.status}
                                 onChange={(e) => {
                                   const newStatus = e.target.value;
-                                  if (newStatus === 'confirmed') {
-                                    setBookingToConfirm({ id: booking.bookingId, name: booking.name, date: booking.selectedDate, time: booking.selectedTime, location: booking.location, serviceType: booking.serviceType });
-                                    setConfirmModalOpen(true);
-                                  } else if (newStatus === 'cancelled') {
-                                    const sendEmail = window.confirm(`Would you like to notify ${booking.name} of this cancellation via email?`);
+                                  if (newStatus === 'confirmed' || newStatus === 'cancelled') {
+                                    const actionText = newStatus === 'confirmed' ? 'confirmation' : 'cancellation';
+                                    const sendEmail = window.confirm(`Would you like to notify ${booking.name} of this ${actionText} via email?`);
                                     updateBookingStatus(booking.bookingId, newStatus, undefined, undefined, undefined, sendEmail);
                                   } else {
                                     updateBookingStatus(booking.bookingId, newStatus);
@@ -1395,90 +1597,254 @@ export function AdminPage({ onLogout }: AdminPageProps) {
 
                       {selectedBooking?.bookingId === booking.bookingId && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">IACRA FTN</label>
-                              <p className="text-gray-700">{booking.iacraFtn}</p>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Aircraft</label>
-                              <p className="text-gray-700 flex items-center">
-                                <Plane className="w-4 h-4 mr-2 text-gray-400" />
-                                {booking.aircraftMakeModel}
-                              </p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Service Type</label>
-                              <p className="text-gray-700">{getServiceTypeLabel(booking.serviceType)}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Booking ID</label>
-                              <p className="text-gray-500 text-sm font-mono">{booking.bookingId}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
-                              <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
-                            </div>
-                            {booking.examFee && (
-                              <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
-                                <p className="text-gray-700">{booking.examFee}</p>
+                          {editingBookingId === booking.bookingId ? (
+                            // Edit Mode
+                            <div className="space-y-4">
+                              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                                <p className="text-sm text-blue-800 font-semibold">Editing Booking - Make your changes below</p>
                               </div>
-                            )}
-                            {booking.retestCertificationType && (
-                              <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
-                                <p className="text-gray-700">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
-                              </div>
-                            )}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-semibold text-gray-600 mb-2">Notes</label>
-                              {editingNotes === booking.bookingId ? (
+
+                              <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                  <textarea
-                                    value={notesValue}
-                                    onChange={(e) => setNotesValue(e.target.value)}
-                                    rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Add notes about this booking..."
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
+                                  <input
+                                    type="date"
+                                    value={editingBookingData.selectedDate}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, selectedDate: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                   />
-                                  <div className="mt-2 flex gap-2">
-                                    <button
-                                      onClick={() => saveNotes(booking.bookingId)}
-                                      disabled={savingNotes}
-                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                                    >
-                                      {savingNotes ? 'Saving...' : 'Save Notes'}
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingNotes('');
-                                        setNotesValue('');
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <select
+                                      value={editingBookingData.startTime}
+                                      onChange={(e) => {
+                                        const start = e.target.value;
+                                        const end = editingBookingData.endTime;
+                                        setEditingBookingData({ 
+                                          ...editingBookingData, 
+                                          startTime: start,
+                                          selectedTime: start && end ? `${start} - ${end}` : start
+                                        });
                                       }}
-                                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                     >
-                                      Cancel
-                                    </button>
+                                      <option value="">Start...</option>
+                                      <option value="6:00 AM">6:00 AM</option>
+                                      <option value="7:00 AM">7:00 AM</option>
+                                      <option value="8:00 AM">8:00 AM</option>
+                                      <option value="9:00 AM">9:00 AM</option>
+                                      <option value="10:00 AM">10:00 AM</option>
+                                      <option value="11:00 AM">11:00 AM</option>
+                                      <option value="12:00 PM">12:00 PM</option>
+                                      <option value="1:00 PM">1:00 PM</option>
+                                      <option value="2:00 PM">2:00 PM</option>
+                                      <option value="3:00 PM">3:00 PM</option>
+                                      <option value="4:00 PM">4:00 PM</option>
+                                      <option value="5:00 PM">5:00 PM</option>
+                                      <option value="6:00 PM">6:00 PM</option>
+                                      <option value="7:00 PM">7:00 PM</option>
+                                      <option value="8:00 PM">8:00 PM</option>
+                                    </select>
+                                    <select
+                                      value={editingBookingData.endTime}
+                                      onChange={(e) => {
+                                        const end = e.target.value;
+                                        const start = editingBookingData.startTime;
+                                        setEditingBookingData({ 
+                                          ...editingBookingData, 
+                                          endTime: end,
+                                          selectedTime: start && end ? `${start} - ${end}` : end
+                                        });
+                                      }}
+                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                    >
+                                      <option value="">End...</option>
+                                      <option value="6:00 AM">6:00 AM</option>
+                                      <option value="7:00 AM">7:00 AM</option>
+                                      <option value="8:00 AM">8:00 AM</option>
+                                      <option value="9:00 AM">9:00 AM</option>
+                                      <option value="10:00 AM">10:00 AM</option>
+                                      <option value="11:00 AM">11:00 AM</option>
+                                      <option value="12:00 PM">12:00 PM</option>
+                                      <option value="1:00 PM">1:00 PM</option>
+                                      <option value="2:00 PM">2:00 PM</option>
+                                      <option value="3:00 PM">3:00 PM</option>
+                                      <option value="4:00 PM">4:00 PM</option>
+                                      <option value="5:00 PM">5:00 PM</option>
+                                      <option value="6:00 PM">6:00 PM</option>
+                                      <option value="7:00 PM">7:00 PM</option>
+                                      <option value="8:00 PM">8:00 PM</option>
+                                    </select>
                                   </div>
                                 </div>
-                              ) : (
-                                <div>
-                                  <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
-                                    {booking.notes || 'No notes added yet.'}
-                                  </p>
-                                  <button
-                                    onClick={() => {
-                                      setEditingNotes(booking.bookingId);
-                                      setNotesValue(booking.notes || '');
-                                    }}
-                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                  >
-                                    {booking.notes ? 'Edit Notes' : 'Add Notes'}
-                                  </button>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
+                                  <input
+                                    type="text"
+                                    value={editingBookingData.location || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, location: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                  <input
+                                    type="text"
+                                    value={editingBookingData.examFee || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, examFee: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="e.g., $950"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
+                                  <textarea
+                                    value={editingBookingData.notes || ''}
+                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, notes: e.target.value })}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Add notes about this booking..."
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3 pt-4">
+                                <button
+                                  onClick={() => {
+                                    const updatedData = {
+                                      selectedDate: editingBookingData.selectedDate,
+                                      selectedTime: editingBookingData.selectedTime,
+                                      location: editingBookingData.location,
+                                      examFee: editingBookingData.examFee,
+                                      notes: editingBookingData.notes
+                                    };
+                                    updateBooking(booking.bookingId, updatedData);
+                                  }}
+                                  disabled={savingBooking}
+                                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 font-semibold"
+                                >
+                                  {savingBooking ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingBookingId('');
+                                    setEditingBookingData(null);
+                                  }}
+                                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+
+                              <div className="border-t border-gray-200 pt-4 mt-4">
+                                <p className="text-sm text-gray-500 mb-2">Read-only information:</p>
+                                <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">IACRA FTN</label>
+                                    <p className="text-gray-700 text-sm">{booking.iacraFtn}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Aircraft</label>
+                                    <p className="text-gray-700 text-sm">{booking.aircraftMakeModel}</p>
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Service Type</label>
+                                    <p className="text-gray-700 text-sm">{getServiceTypeLabel(booking.serviceType)}</p>
+                                  </div>
+                                  {booking.retestCertificationType && (
+                                    <div className="md:col-span-2">
+                                      <label className="block text-xs font-semibold text-gray-500 mb-1">Retest For</label>
+                                      <p className="text-gray-700 text-sm">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // View Mode
+                            <div className="grid md:grid-cols-2 gap-4 mb-6">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">IACRA FTN</label>
+                                <p className="text-gray-700">{booking.iacraFtn}</p>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Aircraft</label>
+                                <p className="text-gray-700 flex items-center">
+                                  <Plane className="w-4 h-4 mr-2 text-gray-400" />
+                                  {booking.aircraftMakeModel}
+                                </p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Service Type</label>
+                                <p className="text-gray-700">{getServiceTypeLabel(booking.serviceType)}</p>
+                              </div>
+                              {booking.retestCertificationType && (
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Retest For</label>
+                                  <p className="text-gray-700">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
                                 </div>
                               )}
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
+                                <p className="text-gray-700">{formatDate(booking.selectedDate)}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
+                                <p className="text-gray-700">{booking.selectedTime}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
+                                <p className="text-gray-700">{booking.location || 'Not specified'}</p>
+                              </div>
+                              {booking.examFee && (
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
+                                  <p className="text-gray-700">{booking.examFee}</p>
+                                </div>
+                              )}
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
+                                <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg min-h-[60px]">
+                                  {booking.notes || 'No notes added yet.'}
+                                </p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Booking ID</label>
+                                <p className="text-gray-500 text-sm font-mono">{booking.bookingId}</p>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
+                                <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
+                              </div>
                             </div>
-                          </div>
+                          )}
+
+                          {/* Action Buttons for Past Appointments */}
+                          {selectedBooking?.bookingId === booking.bookingId && !editingBookingId && (
+                            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 mt-4">
+                              <button
+                                onClick={() => {
+                                  setEditingBookingId(booking.bookingId);
+                                  setEditingBookingData({
+                                    ...booking,
+                                    startTime: booking.selectedTime.split(' - ')[0] || '',
+                                    endTime: booking.selectedTime.split(' - ')[1] || ''
+                                  });
+                                }}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit Booking
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1609,39 +1975,6 @@ export function AdminPage({ onLogout }: AdminPageProps) {
           </div>
         )}
       </div>
-
-      {/* Confirm Booking Modal */}
-      <ConfirmBookingModal
-        isOpen={confirmModalOpen}
-        onClose={() => {
-          setConfirmModalOpen(false);
-          setBookingToConfirm(null);
-        }}
-        onConfirm={(location, selectedDate, selectedTime) => {
-          if (bookingToConfirm) {
-            // Get the current booking to check its status
-            const currentBooking = bookings.find(b => b.bookingId === bookingToConfirm.id);
-            const isAlreadyConfirmed = currentBooking?.status === 'confirmed';
-            
-            // Ask different question based on whether it's a new confirmation or an update
-            const message = isAlreadyConfirmed 
-              ? `Would you like to notify ${bookingToConfirm.name} of this appointment update via email?`
-              : `Would you like to notify ${bookingToConfirm.name} of this confirmation via email?`;
-            const sendEmail = window.confirm(message);
-            
-            // If already confirmed, keep the current status to trigger update email
-            // If not confirmed, change to confirmed to trigger confirmation email
-            const newStatus = isAlreadyConfirmed ? currentBooking.status : 'confirmed';
-            updateBookingStatus(bookingToConfirm.id, newStatus, location, selectedDate, selectedTime, sendEmail);
-            setBookingToConfirm(null);
-          }
-        }}
-        bookingName={bookingToConfirm?.name || ''}
-        currentDate={bookingToConfirm?.date || ''}
-        currentTime={bookingToConfirm?.time || ''}
-        currentLocation={bookingToConfirm?.location}
-        serviceType={bookingToConfirm?.serviceType || 'pp-initial-asel'}
-      />
 
       {/* Email Confirmation Modal */}
       <EmailConfirmationModal

@@ -2138,4 +2138,38 @@ app.post("/make-server-e4d9f7d7/contact", async (c) => {
   });
 });
 
+// Full booking update endpoint
+app.put("/make-server-e4d9f7d7/bookings/:id/update-full", async (c) => {
+  const parseResult = await safeJsonParse(c);
+  if (parseResult.error) {
+    return c.json({ error: parseResult.error }, parseResult.status);
+  }
+  
+  const bookingId = c.req.param('id');
+  const updatedData = parseResult.data;
+  
+  // Get existing booking
+  const existingBooking = await kv.get(bookingId);
+  if (!existingBooking) {
+    return c.json({ error: 'Booking not found' }, 404);
+  }
+  
+  // Merge the updated data with existing booking
+  const updatedBooking = {
+    ...existingBooking,
+    ...updatedData,
+    updatedAt: new Date().toISOString()
+  };
+  
+  await kv.set(bookingId, updatedBooking);
+  
+  console.log(`Booking ${bookingId} fully updated`);
+  
+  return c.json({ 
+    success: true, 
+    message: 'Booking updated successfully',
+    booking: updatedBooking 
+  });
+});
+
 Deno.serve(app.fetch);
