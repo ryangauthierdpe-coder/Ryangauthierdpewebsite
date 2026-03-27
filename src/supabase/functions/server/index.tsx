@@ -710,7 +710,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
           <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
           <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
-          <p>If you have any difficulty finding the location, feel free to reach out. I look forward to meeting you.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out.</p>
           `;
         } else if (location.includes('GON') || location.includes('Groton')) {
           arrivalInstructionsHtml = `
@@ -720,7 +720,7 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
           <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
           <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
           <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
-          <p>If you have any difficulty finding the location, feel free to reach out. I look forward to meeting you.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out.</p>
           `;
         }
         
@@ -2199,6 +2199,11 @@ app.put("/make-server-e4d9f7d7/bookings/:id/update-full", async (c) => {
     return c.json({ error: 'Booking not found' }, 404);
   }
   
+  // Check what changed
+  const dateChanged = existingBooking.selectedDate !== updatedData.selectedDate;
+  const timeChanged = existingBooking.selectedTime !== updatedData.selectedTime;
+  const locationChanged = existingBooking.location !== updatedData.location;
+  
   // Merge the updated data with existing booking
   const updatedBooking = {
     ...existingBooking,
@@ -2209,6 +2214,169 @@ app.put("/make-server-e4d9f7d7/bookings/:id/update-full", async (c) => {
   await kv.set(bookingId, updatedBooking);
   
   console.log(`Booking ${bookingId} fully updated`);
+  
+  // Send update email if date, time, or location changed (only for confirmed bookings)
+  if ((dateChanged || timeChanged || locationChanged) && updatedBooking.status === 'confirmed') {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (resendApiKey) {
+      try {
+        const formattedDate = new Date(updatedBooking.selectedDate).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const serviceTypeLabel = SERVICE_TYPE_LABELS[updatedBooking.serviceType] || updatedBooking.serviceType;
+        const locationForEmail = updatedBooking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
+        
+        // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
+        const startTimeOnly = updatedBooking.selectedTime.split(' - ')[0];
+        
+        // Determine arrival instructions based on location
+        let arrivalInstructionsHtml = '';
+        const location = updatedBooking.location || '';
+        
+        if (location.includes('WST') || location.includes('Westerly')) {
+          arrivalInstructionsHtml = `
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>ARRIVAL INFORMATION:</h3>
+          <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
+          <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
+          <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out.</p>
+          `;
+        } else if (location.includes('GON') || location.includes('Groton')) {
+          arrivalInstructionsHtml = `
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>ARRIVAL INFORMATION:</h3>
+          <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
+          <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
+          <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
+          <p>If you have any difficulty finding the location, feel free to reach out.</p>
+          `;
+        }
+        
+        // Highlight style for changed fields
+        const highlightStyle = 'background-color: #fef3c7; padding: 2px 6px; border-radius: 3px; font-weight: bold;';
+        
+        const updateEmailHtml = `
+          <p>Dear ${updatedBooking.name},</p>
+          <p>This email is to inform you that your appointment with Ryan Gauthier, DPE has been <strong>updated</strong>.</p>
+          
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>UPDATED APPOINTMENT DETAILS:</h3>
+          <p>
+            <strong>Service:</strong> ${serviceTypeLabel}<br>
+            <strong>Date:</strong> ${dateChanged ? `<span style="${highlightStyle}">${formattedDate}</span>` : formattedDate}<br>
+            <strong>Time:</strong> ${timeChanged ? `<span style="${highlightStyle}">${updatedBooking.selectedTime}</span>` : updatedBooking.selectedTime}<br>
+            <strong>Location:</strong> ${locationChanged ? `<span style="${highlightStyle}">${locationForEmail}</span>` : locationForEmail}
+          </p>
+          
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>APPLICANT INFORMATION:</h3>
+          <p>
+            <strong>Name:</strong> ${updatedBooking.name}<br>
+            <strong>Email Address:</strong> ${updatedBooking.email}<br>
+            <strong>Phone Number:</strong> ${updatedBooking.phone}<br>
+            <strong>IACRA FTN:</strong> ${updatedBooking.iacraFtn}<br>
+            <strong>Aircraft:</strong> ${updatedBooking.aircraftMakeModel}
+          </p>
+          <p>Please advise if any of this information is incorrect.</p>
+          
+          ${arrivalInstructionsHtml}
+          
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <h3>WHAT TO PREPARE:</h3>
+          <p>Please visit <a href="http://www.DPERyan.com\">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
+          
+          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+          
+          <p>If you have any questions about this change or need to discuss further modifications, please contact me:</p>
+          <p>
+            <strong>Phone:</strong> 860-912-3283<br>
+            <strong>Email:</strong> RyanGauthierDPE@gmail.com
+          </p>
+          
+          <p>I look forward to seeing you on ${formattedDate} at ${startTimeOnly}!</p>
+          
+          <p>All the best,</p>
+          <p>Ryan</p>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
+            --<br>
+            <strong>Ryan Gauthier</strong><br>
+            Designated Pilot Examiner (DPE)<br>
+            Boston FSDO: EA-61<br>
+            Email: RyanGauthierDPE@gmail.com<br>
+            Phone: 860-912-3283
+          </p>
+        `;
+        
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
+            to: [updatedBooking.email],
+            cc: ['ryangauthierdpe@gmail.com'],
+            subject: `Appointment Updated - ${formattedDate}`,
+            html: updateEmailHtml,
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log(`✅ Appointment update email sent to ${updatedBooking.email} for booking ${bookingId}`);
+        } else {
+          console.error('❌ Failed to send appointment update email:', result);
+          
+          // Fallback if domain verification error
+          if (result.statusCode === 403 && result.message?.includes('verify a domain')) {
+            try {
+              const fallbackResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Ryan Gauthier DPE <noreply@resend.dev>',
+                  to: ['ryangauthierdpe@gmail.com'],
+                  subject: `[COPY FOR YOUR RECORDS] Appointment Updated - ${updatedBooking.name} on ${formattedDate}`,
+                  html: `
+                    <p><strong>⚠️ Note:</strong> This is a copy of the update email that should have been sent to ${updatedBooking.email}. 
+                    Please forward this manually or contact the applicant directly.</p>
+                    <hr style="margin: 20px 0;">
+                    ${updateEmailHtml}
+                  `,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                console.log(`✅ Fallback appointment update email sent to ryangauthierdpe@gmail.com`);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Failed to send fallback appointment update email:', fallbackError);
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending appointment update email:', emailError);
+        // Don't fail the update if email fails
+      }
+    }
+  }
   
   return c.json({ 
     success: true, 
