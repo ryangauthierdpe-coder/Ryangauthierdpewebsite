@@ -1551,20 +1551,56 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
     // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
     const startTimeOnly = booking.selectedTime.split(' - ')[0];
     
+    const locationForEmail = booking.location || 'Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891';
+    
+    // Determine arrival instructions based on location
+    let arrivalInstructionsHtml = '';
+    const location = booking.location || '';
+    
+    if (location.includes('WST') || location.includes('Westerly')) {
+      arrivalInstructionsHtml = `
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+      
+      <h3>ARRIVAL INFORMATION:</h3>
+      <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
+      <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
+      <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
+      <p>If you have any difficulty finding the location, feel free to reach out.</p>
+      `;
+    } else if (location.includes('GON') || location.includes('Groton')) {
+      arrivalInstructionsHtml = `
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+      
+      <h3>ARRIVAL INFORMATION:</h3>
+      <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
+      <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
+      <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
+      <p>If you have any difficulty finding the location, feel free to reach out.</p>
+      `;
+    }
+    
     // Prepare email content
     const emailHtml = `
       <p>Dear ${booking.name},</p>
       <p>This is a reminder of your upcoming appointment with Ryan Gauthier, DPE.</p>
       
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+      
       <h3>APPOINTMENT DETAILS:</h3>
       <p>
         <strong>Date:</strong> ${formattedDate}<br>
         <strong>Time:</strong> ${booking.selectedTime}<br>
-        <strong>Location:</strong> Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891
+        <strong>Location:</strong> ${locationForEmail}
       </p>
+      
+      ${arrivalInstructionsHtml}
+      
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
       
       <h3>WHAT TO PREPARE:</h3>
       <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
+      
+      <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
       
       <h3>WEATHER:</h3>
       <p>We cannot begin the exam unless we have a reasonable expectation that we will be able to complete the exam, to include the flight. If you have any concerns that we will not be able to fly on the day of your practical test, please let me know in advance so that we may reschedule.</p>
