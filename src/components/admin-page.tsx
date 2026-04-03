@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Mail, Phone, Plane, Clock, User, FileText, AlertCircle, Download, Send, ExternalLink, LogOut, Trash2, RotateCcw, Edit, Plus, CheckCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { EmailConfirmationModal } from './email-confirmation-modal';
+import { BookingEditForm } from './booking-edit-form';
 
 interface Booking {
   bookingId: string;
@@ -1256,175 +1257,28 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       {selectedBooking?.bookingId === booking.bookingId && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
                           {editingBookingId === booking.bookingId ? (
-                            // Edit Mode
-                            <div className="space-y-4">
-                              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-                                <p className="text-sm text-blue-800 font-semibold">Editing Booking - Make your changes below</p>
-                              </div>
-
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
-                                  <input
-                                    type="date"
-                                    value={editingBookingData.selectedDate}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, selectedDate: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <select
-                                      value={editingBookingData.startTime}
-                                      onChange={(e) => {
-                                        const start = e.target.value;
-                                        const end = editingBookingData.endTime;
-                                        setEditingBookingData({ 
-                                          ...editingBookingData, 
-                                          startTime: start,
-                                          selectedTime: start && end ? `${start} - ${end}` : start
-                                        });
-                                      }}
-                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                                    >
-                                      <option value="">Start...</option>
-                                      <option value="6:00 AM">6:00 AM</option>
-                                      <option value="7:00 AM">7:00 AM</option>
-                                      <option value="8:00 AM">8:00 AM</option>
-                                      <option value="9:00 AM">9:00 AM</option>
-                                      <option value="10:00 AM">10:00 AM</option>
-                                      <option value="11:00 AM">11:00 AM</option>
-                                      <option value="12:00 PM">12:00 PM</option>
-                                      <option value="1:00 PM">1:00 PM</option>
-                                      <option value="2:00 PM">2:00 PM</option>
-                                      <option value="3:00 PM">3:00 PM</option>
-                                      <option value="4:00 PM">4:00 PM</option>
-                                      <option value="5:00 PM">5:00 PM</option>
-                                      <option value="6:00 PM">6:00 PM</option>
-                                      <option value="7:00 PM">7:00 PM</option>
-                                      <option value="8:00 PM">8:00 PM</option>
-                                    </select>
-                                    <select
-                                      value={editingBookingData.endTime}
-                                      onChange={(e) => {
-                                        const end = e.target.value;
-                                        const start = editingBookingData.startTime;
-                                        setEditingBookingData({ 
-                                          ...editingBookingData, 
-                                          endTime: end,
-                                          selectedTime: start && end ? `${start} - ${end}` : end
-                                        });
-                                      }}
-                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                                    >
-                                      <option value="">End...</option>
-                                      <option value="6:00 AM">6:00 AM</option>
-                                      <option value="7:00 AM">7:00 AM</option>
-                                      <option value="8:00 AM">8:00 AM</option>
-                                      <option value="9:00 AM">9:00 AM</option>
-                                      <option value="10:00 AM">10:00 AM</option>
-                                      <option value="11:00 AM">11:00 AM</option>
-                                      <option value="12:00 PM">12:00 PM</option>
-                                      <option value="1:00 PM">1:00 PM</option>
-                                      <option value="2:00 PM">2:00 PM</option>
-                                      <option value="3:00 PM">3:00 PM</option>
-                                      <option value="4:00 PM">4:00 PM</option>
-                                      <option value="5:00 PM">5:00 PM</option>
-                                      <option value="6:00 PM">6:00 PM</option>
-                                      <option value="7:00 PM">7:00 PM</option>
-                                      <option value="8:00 PM">8:00 PM</option>
-                                    </select>
-                                  </div>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
-                                  <input
-                                    type="text"
-                                    value={editingBookingData.location || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, location: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891"
-                                  />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
-                                  <input
-                                    type="text"
-                                    value={editingBookingData.examFee || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, examFee: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="e.g., $950"
-                                  />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
-                                  <textarea
-                                    value={editingBookingData.notes || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, notes: e.target.value })}
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Add notes about this booking..."
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex gap-3 pt-4">
-                                <button
-                                  onClick={() => {
-                                    const updatedData = {
-                                      selectedDate: editingBookingData.selectedDate,
-                                      selectedTime: editingBookingData.selectedTime,
-                                      location: editingBookingData.location,
-                                      examFee: editingBookingData.examFee,
-                                      notes: editingBookingData.notes
-                                    };
-                                    updateBooking(booking.bookingId, updatedData);
-                                  }}
-                                  disabled={savingBooking}
-                                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 font-semibold"
-                                >
-                                  {savingBooking ? 'Saving...' : 'Save Changes'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingBookingId('');
-                                    setEditingBookingData(null);
-                                  }}
-                                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-
-                              <div className="border-t border-gray-200 pt-4 mt-4">
-                                <p className="text-sm text-gray-500 mb-2">Read-only information:</p>
-                                <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                                  <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">IACRA FTN</label>
-                                    <p className="text-gray-700 text-sm">{booking.iacraFtn}</p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Aircraft</label>
-                                    <p className="text-gray-700 text-sm">{booking.aircraftMakeModel}</p>
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Service Type</label>
-                                    <p className="text-gray-700 text-sm">{getServiceTypeLabel(booking.serviceType)}</p>
-                                  </div>
-                                  {booking.retestCertificationType && (
-                                    <div className="md:col-span-2">
-                                      <label className="block text-xs font-semibold text-gray-500 mb-1">Retest For</label>
-                                      <p className="text-gray-700 text-sm">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            <BookingEditForm
+                              editingBookingData={editingBookingData}
+                              setEditingBookingData={setEditingBookingData}
+                              onSave={() => {
+                                const updatedData = {
+                                  selectedDate: editingBookingData.selectedDate,
+                                  selectedTime: editingBookingData.selectedTime,
+                                  location: editingBookingData.location,
+                                  examFee: editingBookingData.examFee,
+                                  notes: editingBookingData.notes
+                                };
+                                updateBooking(booking.bookingId, updatedData);
+                              }}
+                              onCancel={() => {
+                                setEditingBookingId('');
+                                setEditingBookingData(null);
+                              }}
+                              savingBooking={savingBooking}
+                              booking={booking}
+                              getServiceTypeLabel={getServiceTypeLabel}
+                              getRetestCertificationLabel={getRetestCertificationLabel}
+                            />
                           ) : (
                             // View Mode
                             <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -1620,175 +1474,28 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                       {selectedBooking?.bookingId === booking.bookingId && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
                           {editingBookingId === booking.bookingId ? (
-                            // Edit Mode
-                            <div className="space-y-4">
-                              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-                                <p className="text-sm text-blue-800 font-semibold">Editing Booking - Make your changes below</p>
-                              </div>
-
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
-                                  <input
-                                    type="date"
-                                    value={editingBookingData.selectedDate}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, selectedDate: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Time</label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <select
-                                      value={editingBookingData.startTime}
-                                      onChange={(e) => {
-                                        const start = e.target.value;
-                                        const end = editingBookingData.endTime;
-                                        setEditingBookingData({ 
-                                          ...editingBookingData, 
-                                          startTime: start,
-                                          selectedTime: start && end ? `${start} - ${end}` : start
-                                        });
-                                      }}
-                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                                    >
-                                      <option value="">Start...</option>
-                                      <option value="6:00 AM">6:00 AM</option>
-                                      <option value="7:00 AM">7:00 AM</option>
-                                      <option value="8:00 AM">8:00 AM</option>
-                                      <option value="9:00 AM">9:00 AM</option>
-                                      <option value="10:00 AM">10:00 AM</option>
-                                      <option value="11:00 AM">11:00 AM</option>
-                                      <option value="12:00 PM">12:00 PM</option>
-                                      <option value="1:00 PM">1:00 PM</option>
-                                      <option value="2:00 PM">2:00 PM</option>
-                                      <option value="3:00 PM">3:00 PM</option>
-                                      <option value="4:00 PM">4:00 PM</option>
-                                      <option value="5:00 PM">5:00 PM</option>
-                                      <option value="6:00 PM">6:00 PM</option>
-                                      <option value="7:00 PM">7:00 PM</option>
-                                      <option value="8:00 PM">8:00 PM</option>
-                                    </select>
-                                    <select
-                                      value={editingBookingData.endTime}
-                                      onChange={(e) => {
-                                        const end = e.target.value;
-                                        const start = editingBookingData.startTime;
-                                        setEditingBookingData({ 
-                                          ...editingBookingData, 
-                                          endTime: end,
-                                          selectedTime: start && end ? `${start} - ${end}` : end
-                                        });
-                                      }}
-                                      className="px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                                    >
-                                      <option value="">End...</option>
-                                      <option value="6:00 AM">6:00 AM</option>
-                                      <option value="7:00 AM">7:00 AM</option>
-                                      <option value="8:00 AM">8:00 AM</option>
-                                      <option value="9:00 AM">9:00 AM</option>
-                                      <option value="10:00 AM">10:00 AM</option>
-                                      <option value="11:00 AM">11:00 AM</option>
-                                      <option value="12:00 PM">12:00 PM</option>
-                                      <option value="1:00 PM">1:00 PM</option>
-                                      <option value="2:00 PM">2:00 PM</option>
-                                      <option value="3:00 PM">3:00 PM</option>
-                                      <option value="4:00 PM">4:00 PM</option>
-                                      <option value="5:00 PM">5:00 PM</option>
-                                      <option value="6:00 PM">6:00 PM</option>
-                                      <option value="7:00 PM">7:00 PM</option>
-                                      <option value="8:00 PM">8:00 PM</option>
-                                    </select>
-                                  </div>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Location</label>
-                                  <input
-                                    type="text"
-                                    value={editingBookingData.location || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, location: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Westerly State Airport (WST) - 56 Airport Road, Westerly, RI 02891"
-                                  />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Exam Fee</label>
-                                  <input
-                                    type="text"
-                                    value={editingBookingData.examFee || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, examFee: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="e.g., $950"
-                                  />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                  <label className="block text-sm font-semibold text-gray-600 mb-1">Notes</label>
-                                  <textarea
-                                    value={editingBookingData.notes || ''}
-                                    onChange={(e) => setEditingBookingData({ ...editingBookingData, notes: e.target.value })}
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Add notes about this booking..."
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex gap-3 pt-4">
-                                <button
-                                  onClick={() => {
-                                    const updatedData = {
-                                      selectedDate: editingBookingData.selectedDate,
-                                      selectedTime: editingBookingData.selectedTime,
-                                      location: editingBookingData.location,
-                                      examFee: editingBookingData.examFee,
-                                      notes: editingBookingData.notes
-                                    };
-                                    updateBooking(booking.bookingId, updatedData);
-                                  }}
-                                  disabled={savingBooking}
-                                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 font-semibold"
-                                >
-                                  {savingBooking ? 'Saving...' : 'Save Changes'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingBookingId('');
-                                    setEditingBookingData(null);
-                                  }}
-                                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-
-                              <div className="border-t border-gray-200 pt-4 mt-4">
-                                <p className="text-sm text-gray-500 mb-2">Read-only information:</p>
-                                <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                                  <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">IACRA FTN</label>
-                                    <p className="text-gray-700 text-sm">{booking.iacraFtn}</p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Aircraft</label>
-                                    <p className="text-gray-700 text-sm">{booking.aircraftMakeModel}</p>
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Service Type</label>
-                                    <p className="text-gray-700 text-sm">{getServiceTypeLabel(booking.serviceType)}</p>
-                                  </div>
-                                  {booking.retestCertificationType && (
-                                    <div className="md:col-span-2">
-                                      <label className="block text-xs font-semibold text-gray-500 mb-1">Retest For</label>
-                                      <p className="text-gray-700 text-sm">{getRetestCertificationLabel(booking.retestCertificationType)}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            <BookingEditForm
+                              editingBookingData={editingBookingData}
+                              setEditingBookingData={setEditingBookingData}
+                              onSave={() => {
+                                const updatedData = {
+                                  selectedDate: editingBookingData.selectedDate,
+                                  selectedTime: editingBookingData.selectedTime,
+                                  location: editingBookingData.location,
+                                  examFee: editingBookingData.examFee,
+                                  notes: editingBookingData.notes
+                                };
+                                updateBooking(booking.bookingId, updatedData);
+                              }}
+                              onCancel={() => {
+                                setEditingBookingId('');
+                                setEditingBookingData(null);
+                              }}
+                              savingBooking={savingBooking}
+                              booking={booking}
+                              getServiceTypeLabel={getServiceTypeLabel}
+                              getRetestCertificationLabel={getRetestCertificationLabel}
+                            />
                           ) : (
                             // View Mode
                             <div className="grid md:grid-cols-2 gap-4 mb-6">
