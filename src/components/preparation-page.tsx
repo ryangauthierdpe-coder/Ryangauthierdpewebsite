@@ -44,7 +44,7 @@ export function PreparationPage() {
             <li className="flex items-start">
               <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">1</span>
               <div className="flex items-center flex-wrap pt-1 gap-2">
-                <span className="text-lg text-gray-900 font-semibold">Review Ryan's schedule and choose a suitable date.</span>
+                <span className="text-lg text-gray-900 font-semibold">Navigate to the <strong>Schedule</strong> page.</span>
                 <button
                   onClick={handleScheduleClick}
                   className="px-3 py-1 bg-emerald-600 text-white text-sm font-semibold rounded hover:bg-emerald-700 transition-colors whitespace-nowrap"
@@ -55,12 +55,20 @@ export function PreparationPage() {
             </li>
             <li className="flex items-start">
               <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">2</span>
-              <span className="text-lg text-gray-900 font-semibold pt-1">Select an available date/time and complete the booking form.</span>
+              <span className="text-lg text-gray-900 font-semibold pt-1">Select the <strong>Service Type</strong> <span className="text-sm font-normal text-gray-600">(Tells the system how much time you will need.)</span></span>
             </li>
             <li className="flex items-start">
               <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">3</span>
+              <span className="text-lg text-gray-900 font-semibold pt-1">Find an available <strong>Date</strong> that is most convenient for you.</span>
+            </li>
+            <li className="flex items-start">
+              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">4</span>
+              <span className="text-lg text-gray-900 font-semibold pt-1">Follow the remaining prompts and complete the <strong>Booking Form</strong>, then click <strong>Submit Booking Request</strong>.</span>
+            </li>
+            <li className="flex items-start">
+              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">5</span>
               <div className="flex-1">
-                <span className="text-lg text-gray-900 font-semibold pt-1">Watch for a confirmation email; if not received within 24 hours, email Ryan to confirm.</span>
+                <span className="text-lg text-gray-900 font-semibold pt-1">Watch for a confirmation email. If one is not received within 24 hours, email Ryan to confirm.</span>
                 <div className="mt-3 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -72,11 +80,11 @@ export function PreparationPage() {
               </div>
             </li>
             <li className="flex items-start">
-              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">4</span>
-              <span className="text-lg text-gray-900 font-semibold pt-1">About two weeks before your exam, Ryan will send a Practical Test Briefing with a scenario to prepare.</span>
+              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">6</span>
+              <span className="text-lg text-gray-900 font-semibold pt-1">About two weeks before your exam, Ryan will send a <strong>Practical Test Briefing</strong> with a scenario to prepare (if applicable).</span>
             </li>
             <li className="flex items-start">
-              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">5</span>
+              <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">7</span>
               <span className="text-lg text-gray-900 font-semibold pt-1">Review the information below to ensure you're fully prepared.</span>
             </li>
           </ol>
@@ -147,7 +155,10 @@ export function PreparationPage() {
                     <strong>30 minutes</strong> for paperwork review prior to beginning the exam
                   </li>
                   <li className="bg-slate-100 p-3 rounded">
-                    <p className="text-gray-900 mb-1"><strong>ORAL PORTION (2-3 hours)</strong></p>
+                    <p className="text-gray-900 mb-1">
+                      <strong>ORAL PORTION (2-3 hours)</strong>
+                      <span className="text-sm font-normal text-gray-600 ml-2">- May be shorter depending on the type of exam</span>
+                    </p>
                     <p className="text-gray-700">
                       The oral portion covers the Airman Certification Standards (ACS) knowledge areas.
                     </p>
@@ -162,7 +173,10 @@ export function PreparationPage() {
                     <strong>30 minutes</strong> for Pre-flight and aircraft preparations
                   </li>
                   <li className="bg-slate-100 p-3 rounded">
-                    <p className="text-gray-900 mb-1"><strong>FLIGHT PORTION (1.5-2 hours)</strong></p>
+                    <p className="text-gray-900 mb-1">
+                      <strong>FLIGHT PORTION (1.5-2 hours)</strong>
+                      <span className="text-sm font-normal text-gray-600 ml-2">- May be shorter depending on the type of exam</span>
+                    </p>
                     <p className="text-gray-700">
                       Demonstrate proficiency in all required maneuvers and procedures per the ACS. 
                       You will act as pilot in command and the examiner will evaluate your performance.

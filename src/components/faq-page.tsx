@@ -766,7 +766,7 @@ export function FAQPage() {
         },
         {
           question: "Can a failed Task be retrained during the test?",
-          answer: "No."
+          answer: "No. Any unsatisfactory task(s) will require remedial training after the fact from your Flight Instructor. After successful remedial training, see the information contained under Q: What happens after receiving a Notice of Disapproval?"
         }
       ]
     },

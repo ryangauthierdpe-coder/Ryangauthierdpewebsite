@@ -231,7 +231,7 @@ export function ReferencesPage() {
                   className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  1800WxBrief (Leidos Flight Service)
+                  1800WXBrief (FlightService)
                 </a>
               </li>
             </ul>
