@@ -115,7 +115,13 @@
     "tw-animate-css": "1.3.8",
     "tw-animate-css@1.3.8": "npm:tw-animate-css@1.3.8",
     "vaul": "1.1.2",
-    "vaul@1.1.2": "npm:vaul@1.1.2"
+    "vaul@1.1.2": "npm:vaul@1.1.2",
+    "@vercel/analytics": "^2.0.1",
+    "@jsr/supabase__supabase-js@2.49.8": "npm:@jsr/supabase__supabase-js@2.49.8",
+    "hono": "^4.12.14",
+    "jose@5.9.6": "npm:jose@5.9.6",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
@@ -139,5 +145,7 @@
     "overrides": {
       "vite": "6.3.5"
     }
-  }
+  },
+  "readme": "ERROR: No README data found!",
+  "_id": "@figma/my-make-file@0.0.1"
 }
