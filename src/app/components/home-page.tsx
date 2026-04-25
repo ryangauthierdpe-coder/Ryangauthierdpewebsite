@@ -1,6 +1,5 @@
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Plane, CheckCircle, FileText, MapPin, Phone, Mail, ChevronDown } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { ContactModal } from './contact-modal';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -293,13 +292,13 @@ export function HomePage() {
               <div className="flex-1">
                 <h3 className="text-2xl font-semibold mb-4">Administrative Functions</h3>
                 <p className="text-gray-600 mb-4">Click on a service below for more details:</p>
-                
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="foreign-pilot">
-                    <AccordionTrigger className="text-emerald-700 hover:text-emerald-900 text-left text-lg">
+
+                <div className="w-full space-y-4">
+                  <details className="border border-gray-200 rounded-lg">
+                    <summary className="text-emerald-700 hover:text-emerald-900 text-left text-lg cursor-pointer p-4 font-semibold">
                       Foreign Pilot
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-700 pt-2 pl-4">
+                    </summary>
+                    <div className="text-gray-700 pt-2 pl-4 pb-4 px-4">
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
@@ -335,14 +334,14 @@ export function HomePage() {
                       >
                         Contact Ryan
                       </button>
-                    </AccordionContent>
-                  </AccordionItem>
+                    </div>
+                  </details>
 
-                  <AccordionItem value="military-competency">
-                    <AccordionTrigger className="text-emerald-700 hover:text-emerald-900 text-left text-lg">
+                  <details className="border border-gray-200 rounded-lg">
+                    <summary className="text-emerald-700 hover:text-emerald-900 text-left text-lg cursor-pointer p-4 font-semibold">
                       Military Competency
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-700 pt-2 pl-4">
+                    </summary>
+                    <div className="text-gray-700 pt-2 pl-4 pb-4 px-4">
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
@@ -374,14 +373,14 @@ export function HomePage() {
                       >
                         Contact Ryan
                       </button>
-                    </AccordionContent>
-                  </AccordionItem>
+                    </div>
+                  </details>
 
-                  <AccordionItem value="flight-instructor-renewal">
-                    <AccordionTrigger className="text-emerald-700 hover:text-emerald-900 text-left text-lg">
+                  <details className="border border-gray-200 rounded-lg">
+                    <summary className="text-emerald-700 hover:text-emerald-900 text-left text-lg cursor-pointer p-4 font-semibold">
                       Flight Instructor Renewal
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-700 pt-2 pl-4">
+                    </summary>
+                    <div className="text-gray-700 pt-2 pl-4 pb-4 px-4">
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
@@ -405,14 +404,14 @@ export function HomePage() {
                       >
                         Contact Ryan
                       </button>
-                    </AccordionContent>
-                  </AccordionItem>
+                    </div>
+                  </details>
 
-                  <AccordionItem value="ground-instructor">
-                    <AccordionTrigger className="text-emerald-700 hover:text-emerald-900 text-left text-lg">
+                  <details className="border border-gray-200 rounded-lg">
+                    <summary className="text-emerald-700 hover:text-emerald-900 text-left text-lg cursor-pointer p-4 font-semibold">
                       Ground Instructor
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-700 pt-2 pl-4">
+                    </summary>
+                    <div className="text-gray-700 pt-2 pl-4 pb-4 px-4">
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
                           <Plane className="w-4 h-4 text-emerald-600 mr-2 mt-0.5 flex-shrink-0" />
@@ -436,14 +435,14 @@ export function HomePage() {
                       >
                         Contact Ryan
                       </button>
-                    </AccordionContent>
-                  </AccordionItem>
+                    </div>
+                  </details>
 
-                  <AccordionItem value="basic-administrative">
-                    <AccordionTrigger className="text-emerald-700 hover:text-emerald-900 text-left text-lg">
+                  <details className="border border-gray-200 rounded-lg">
+                    <summary className="text-emerald-700 hover:text-emerald-900 text-left text-lg cursor-pointer p-4 font-semibold">
                       Basic Administrative Functions
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-700 pt-2 pl-4">
+                    </summary>
+                    <div className="text-gray-700 pt-2 pl-4 pb-4 px-4">
                       <p className="mb-3">Includes the following services:</p>
                       <ul className="space-y-3 mb-3">
                         <li className="flex items-start">
@@ -485,9 +484,9 @@ export function HomePage() {
                       >
                         Contact Ryan
                       </button>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                    </div>
+                  </details>
+                </div>
               </div>
             </div>
           </div>
