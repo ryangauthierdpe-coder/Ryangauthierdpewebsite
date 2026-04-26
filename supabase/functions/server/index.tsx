@@ -501,6 +501,7 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
       body: JSON.stringify({
         from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
         to: [booking.email],
+        cc: ['ryangauthierdpe@gmail.com'],
         subject: `Appointment Reminder - ${formattedDate} at ${booking.selectedTime}`,
         html: emailHtml,
       }),
