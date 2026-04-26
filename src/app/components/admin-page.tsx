@@ -270,7 +270,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     setSavingBooking(true);
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}/update-full`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}`,
         {
           method: 'PUT',
           headers: {
@@ -287,12 +287,8 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         throw new Error(data.error || 'Failed to update booking');
       }
 
-      // Update local state
-      setBookings(prevBookings =>
-        prevBookings.map(b =>
-          b.bookingId === bookingId ? { ...b, ...updatedData } : b
-        )
-      );
+      // Refresh bookings to get updated data with history
+      await fetchBookings();
 
       setEditingBookingId('');
       setEditingBookingData(null);
