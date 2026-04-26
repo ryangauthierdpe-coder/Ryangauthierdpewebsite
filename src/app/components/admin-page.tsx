@@ -4,6 +4,12 @@ import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { EmailConfirmationModal } from './email-confirmation-modal';
 import { BookingEditForm } from './booking-edit-form';
 
+interface HistoryEntry {
+  timestamp: string;
+  action: string;
+  details: string;
+}
+
 interface Booking {
   bookingId: string;
   name: string;
@@ -21,6 +27,7 @@ interface Booking {
   retestCertificationType?: string;
   isManualBooking?: boolean;
   examFee?: string;
+  history?: HistoryEntry[];
 }
 
 interface AdminPageProps {
@@ -1335,6 +1342,27 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
                                 <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
                               </div>
+
+                              {/* Activity History Log */}
+                              {booking.history && booking.history.length > 0 && (
+                                <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-3">Activity History</label>
+                                  <div className="space-y-3">
+                                    {booking.history.slice().reverse().map((entry, index) => (
+                                      <div key={index} className="flex gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center mt-0.5">
+                                          <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="font-semibold text-gray-800">{entry.action}</div>
+                                          <div className="text-gray-600">{entry.details}</div>
+                                          <div className="text-gray-400 text-xs mt-1">{formatTimestamp(entry.timestamp)}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -1552,6 +1580,27 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 <label className="block text-sm font-semibold text-gray-600 mb-1">Submitted</label>
                                 <p className="text-gray-500 text-sm">{formatTimestamp(booking.createdAt)}</p>
                               </div>
+
+                              {/* Activity History Log */}
+                              {booking.history && booking.history.length > 0 && (
+                                <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                                  <label className="block text-sm font-semibold text-gray-600 mb-3">Activity History</label>
+                                  <div className="space-y-3">
+                                    {booking.history.slice().reverse().map((entry, index) => (
+                                      <div key={index} className="flex gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center mt-0.5">
+                                          <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="font-semibold text-gray-800">{entry.action}</div>
+                                          <div className="text-gray-600">{entry.details}</div>
+                                          <div className="text-gray-400 text-xs mt-1">{formatTimestamp(entry.timestamp)}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
 

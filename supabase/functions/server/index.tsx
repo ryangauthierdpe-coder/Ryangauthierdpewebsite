@@ -191,7 +191,14 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
     ...bookingData,
     bookingId,
     createdAt: new Date().toISOString(),
-    status: 'pending'
+    status: 'pending',
+    history: [
+      {
+        timestamp: new Date().toISOString(),
+        action: 'Booking Created',
+        details: 'Appointment request submitted by applicant'
+      }
+    ]
   };
 
   // Save to database
@@ -339,10 +346,34 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
     return c.json({ error: 'Booking not found' }, 404);
   }
 
+  // Track changes for history
+  const history = existingBooking.history || [];
+  const historyEntry: any = {
+    timestamp: new Date().toISOString(),
+    action: '',
+    details: ''
+  };
+
+  // Check what changed
+  if (updates.status && updates.status !== existingBooking.status) {
+    historyEntry.action = 'Status Changed';
+    historyEntry.details = `Status changed from "${existingBooking.status}" to "${updates.status}"`;
+    history.push(historyEntry);
+  } else {
+    // Generic update
+    const changedFields = Object.keys(updates).filter(key => key !== 'history');
+    if (changedFields.length > 0) {
+      historyEntry.action = 'Booking Updated';
+      historyEntry.details = `Updated: ${changedFields.join(', ')}`;
+      history.push(historyEntry);
+    }
+  }
+
   // Update booking
   const updatedBooking = {
     ...existingBooking,
     ...updates,
+    history,
     updatedAt: new Date().toISOString()
   };
 
@@ -479,6 +510,22 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
 
     if (response.ok) {
       console.log('✅ Reminder email sent successfully to:', booking.email);
+
+      // Add history entry for sent email
+      const history = booking.history || [];
+      history.push({
+        timestamp: new Date().toISOString(),
+        action: 'Reminder Email Sent',
+        details: `Appointment reminder sent to ${booking.email}`
+      });
+
+      // Update booking with history
+      const updatedBooking = {
+        ...booking,
+        history
+      };
+      await kv.set(bookingId, updatedBooking);
+
       return c.json({ success: true, message: 'Reminder email sent successfully' });
     } else {
       console.error('❌ Failed to send reminder email:', result);
