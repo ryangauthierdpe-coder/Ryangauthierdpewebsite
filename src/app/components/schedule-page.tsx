@@ -13,6 +13,7 @@ interface BookingFormData {
   selectedDate: string;
   selectedTime: string;
   retestCertificationType?: string; // For retest services only
+  notes?: string; // Optional notes for Ryan
 }
 
 interface BusyTime {
@@ -80,6 +81,7 @@ export function SchedulePage() {
     serviceType: '',
     selectedDate: '',
     selectedTime: '',
+    notes: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -288,7 +290,7 @@ export function SchedulePage() {
     }, 100);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
@@ -790,6 +792,21 @@ export function SchedulePage() {
                     placeholder="Cessna 172"
                   />
                 </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="notes" className="block font-semibold mb-2">
+                    Notes for Ryan <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes || ''}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-vertical"
+                    placeholder="Add any additional information or questions for Ryan..."
+                  />
+                </div>
               </div>
 
               <div className="pt-6 border-t border-gray-200">
@@ -801,7 +818,7 @@ export function SchedulePage() {
                   {isSubmitting ? 'Submitting...' : 'Submit Booking Request'}
                 </button>
                 <p className="text-sm text-gray-500 text-center mt-3">
-                  * All fields are required
+                  * Required fields (Notes are optional)
                 </p>
               </div>
             </form>
