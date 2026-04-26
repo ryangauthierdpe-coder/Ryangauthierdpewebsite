@@ -356,29 +356,6 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   });
 });
 
-// Delete a booking
-app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
-  try {
-    const bookingId = c.req.param('id');
-
-    // Check if booking exists
-    const existingBooking = await kv.get(bookingId);
-    if (!existingBooking) {
-      return c.json({ error: 'Booking not found' }, 404);
-    }
-
-    // Delete the booking
-    await kv.del(bookingId);
-
-    console.log(`Booking ${bookingId} deleted`);
-
-    return c.json({ success: true, message: 'Booking deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting booking:', error);
-    return c.json({ error: 'Failed to delete booking', details: error.message }, 500);
-  }
-});
-
 // Send email reminder
 app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
   try {
@@ -510,6 +487,29 @@ app.post("/make-server-e4d9f7d7/bookings/:id/send-reminder", async (c) => {
   } catch (error) {
     console.error('Error sending reminder email:', error);
     return c.json({ error: 'Failed to send reminder email', details: error.message }, 500);
+  }
+});
+
+// Delete a booking
+app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+
+    // Check if booking exists
+    const existingBooking = await kv.get(bookingId);
+    if (!existingBooking) {
+      return c.json({ error: 'Booking not found' }, 404);
+    }
+
+    // Delete the booking
+    await kv.del(bookingId);
+
+    console.log(`Booking ${bookingId} deleted`);
+
+    return c.json({ success: true, message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    return c.json({ error: 'Failed to delete booking', details: error.message }, 500);
   }
 });
 
