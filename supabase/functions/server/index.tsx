@@ -306,4 +306,77 @@ app.get("/make-server-e4d9f7d7/bookings", async (c) => {
   }
 });
 
+// Get a specific booking by ID
+app.get("/make-server-e4d9f7d7/bookings/:id", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+    const booking = await kv.get(bookingId);
+
+    if (!booking) {
+      return c.json({ error: 'Booking not found' }, 404);
+    }
+
+    return c.json({ booking });
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    return c.json({ error: 'Failed to fetch booking', details: error.message }, 500);
+  }
+});
+
+// Update a booking
+app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
+  const parseResult = await safeJsonParse(c);
+  if (parseResult.error) {
+    return c.json({ error: parseResult.error }, parseResult.status);
+  }
+
+  const bookingId = c.req.param('id');
+  const updates = parseResult.data;
+
+  // Get existing booking
+  const existingBooking = await kv.get(bookingId);
+  if (!existingBooking) {
+    return c.json({ error: 'Booking not found' }, 404);
+  }
+
+  // Update booking
+  const updatedBooking = {
+    ...existingBooking,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+
+  await kv.set(bookingId, updatedBooking);
+
+  console.log(`Booking ${bookingId} updated`);
+
+  return c.json({
+    success: true,
+    booking: updatedBooking
+  });
+});
+
+// Delete a booking
+app.delete("/make-server-e4d9f7d7/bookings/:id", async (c) => {
+  try {
+    const bookingId = c.req.param('id');
+
+    // Check if booking exists
+    const existingBooking = await kv.get(bookingId);
+    if (!existingBooking) {
+      return c.json({ error: 'Booking not found' }, 404);
+    }
+
+    // Delete the booking
+    await kv.del(bookingId);
+
+    console.log(`Booking ${bookingId} deleted`);
+
+    return c.json({ success: true, message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    return c.json({ error: 'Failed to delete booking', details: error.message }, 500);
+  }
+});
+
 Deno.serve(app.fetch);
