@@ -285,6 +285,100 @@ app.post("/make-server-e4d9f7d7/bookings", async (c) => {
       console.error('❌ Error sending notification email to DPE:', emailError);
       // Don't fail the booking if email fails
     }
+
+    // Send auto-reply to applicant confirming receipt of their request
+    try {
+      console.log('📧 Attempting to send auto-reply to applicant...');
+
+      const formattedDate = new Date(booking.selectedDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const serviceTypeLabel = SERVICE_TYPE_LABELS[booking.serviceType] || booking.serviceType;
+
+      const applicantEmailHtml = `
+        <p>Dear ${booking.name},</p>
+        <p>Thank you for submitting your practical test appointment request. This email confirms that we have received your request.</p>
+
+        <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+
+        <h3>YOUR SUBMITTED REQUEST:</h3>
+        <p>
+          <strong>Name:</strong> ${booking.name}<br>
+          <strong>Email:</strong> ${booking.email}<br>
+          <strong>Phone:</strong> ${booking.phone}<br>
+          <strong>IACRA FTN:</strong> ${booking.iacraFtn}<br>
+          <strong>Aircraft Make/Model:</strong> ${booking.aircraftMakeModel}<br>
+          <strong>Service Type:</strong> ${serviceTypeLabel}<br>
+          <strong>Requested Date:</strong> ${formattedDate}<br>
+          <strong>Requested Time:</strong> ${booking.selectedTime}
+        </p>
+        ${booking.notes ? `<p><strong>Notes:</strong><br>${booking.notes.replace(/\n/g, '<br>')}</p>` : ''}
+
+        <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+
+        <h3>⚠️ IMPORTANT - NEXT STEPS:</h3>
+        <p><strong>Please watch for a confirmation email from Ryan Gauthier, DPE.</strong></p>
+
+        <p>There are several scheduling factors to consider before final confirmation is provided. <strong>Please do not make any travel or logistical arrangements until you have received written confirmation via email that your practical test has been officially scheduled.</strong></p>
+
+        <p>If you do not receive a confirmation email within 24 hours, please email Ryan directly at <a href="mailto:RyanGauthierDPE@gmail.com">RyanGauthierDPE@gmail.com</a> to confirm receipt of your request.</p>
+
+        <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+
+        <p>If you have any questions, please contact:</p>
+        <p>
+          <strong>Email:</strong> RyanGauthierDPE@gmail.com<br>
+          <strong>Phone:</strong> 860-912-3283
+        </p>
+
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; color: #666;">
+          --<br>
+          <strong>Ryan Gauthier</strong><br>
+          Designated Pilot Examiner (DPE)<br>
+          Boston FSDO: EA-61<br>
+          Email: RyanGauthierDPE@gmail.com<br>
+          Phone: 860-912-3283
+        </p>
+      `;
+
+      const applicantResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Ryan Gauthier DPE <noreply@dperyan.com>',
+          to: [booking.email],
+          cc: ['ryangauthierdpe@gmail.com'],
+          subject: 'Appointment Request Received - Please Read',
+          html: applicantEmailHtml,
+        }),
+      });
+
+      const applicantResult = await applicantResponse.json();
+
+      if (applicantResponse.ok) {
+        console.log('✅ Auto-reply sent to applicant for booking:', bookingId);
+
+        // Add history entry for auto-reply
+        booking.history.push({
+          timestamp: new Date().toISOString(),
+          action: 'Auto-Reply Email Sent',
+          details: `Request received confirmation sent to ${booking.email}`
+        });
+        await kv.set(bookingId, booking);
+      } else {
+        console.error('❌ Failed to send auto-reply to applicant:', applicantResult);
+      }
+    } catch (applicantEmailError) {
+      console.error('❌ Error sending auto-reply to applicant:', applicantEmailError);
+      // Don't fail the booking if email fails
+    }
   } else {
     console.error('❌ RESEND_API_KEY not found - cannot send notification email to DPE');
   }
