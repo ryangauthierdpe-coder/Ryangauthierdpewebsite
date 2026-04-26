@@ -416,10 +416,18 @@ export function SchedulePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
             <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-green-900 mb-2">Booking Submitted!</h2>
-            <p className="text-green-800">
-              Thank you for scheduling your appointment. You will receive a confirmation email shortly with an option to add the appointment to your calendar.
-            </p>
+            <h2 className="text-3xl font-bold text-green-900 mb-4">Request Submitted!</h2>
+            <div className="text-left max-w-2xl mx-auto space-y-4">
+              <p className="text-green-800 font-semibold">
+                Thank you for your request. Watch for a confirmation email. If one is not received within 24 hours, email Ryan to confirm.
+              </p>
+              <p className="text-green-800">
+                There are several scheduling factors to consider before final confirmation is provided. <strong>Please do not make any travel or logistical arrangements until you have received written confirmation via email that your practical test has been officially scheduled.</strong>
+              </p>
+              <p className="text-green-800 text-sm">
+                You should receive an automatic email shortly confirming we received your request, along with a copy of the information you submitted.
+              </p>
+            </div>
           </div>
         </div>
       </div>
