@@ -548,45 +548,75 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
   }
   
   const bookingId = c.req.param('id');
-  const { status, location, selectedDate, selectedTime, notes, sendEmail = true } = parseResult.data;
-  
-  // Validate status
-  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
-  if (!validStatuses.includes(status)) {
-    return c.json({ error: 'Invalid status. Must be one of: pending, confirmed, completed, cancelled' }, 400);
-  }
-  
+  const { status, location, selectedDate, selectedTime, notes, examFee, sendEmail = true } = parseResult.data;
+
   // Get existing booking
   const existingBooking = await kv.get(bookingId);
   if (!existingBooking) {
     return c.json({ error: 'Booking not found' }, 404);
   }
-  
+
+  // Validate status if provided
+  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+  if (status && !validStatuses.includes(status)) {
+    return c.json({ error: 'Invalid status. Must be one of: pending, confirmed, completed, cancelled' }, 400);
+  }
+
   // Check if date or time has changed
   const dateChanged = selectedDate && selectedDate !== existingBooking.selectedDate;
   const timeChanged = selectedTime && selectedTime !== existingBooking.selectedTime;
   const locationChanged = location && location !== existingBooking.location;
-  
+
   // Check if status is changing
-  const statusChanged = status !== existingBooking.status;
+  const statusChanged = status && status !== existingBooking.status;
   const isChangingToConfirmed = statusChanged && status === 'confirmed';
   const isChangingToCancelled = statusChanged && status === 'cancelled';
-  
-  // Update booking with new status and optionally location, date, time, and notes
+
+  // Track changes for history
+  const history = existingBooking.history || [];
+  const changes = [];
+
+  if (statusChanged) {
+    changes.push(`Status changed from "${existingBooking.status}" to "${status}"`);
+  }
+  if (dateChanged) {
+    changes.push(`Date changed to ${selectedDate}`);
+  }
+  if (timeChanged) {
+    changes.push(`Time changed to ${selectedTime}`);
+  }
+  if (locationChanged) {
+    changes.push(`Location updated`);
+  }
+  if (examFee !== undefined && examFee !== existingBooking.examFee) {
+    changes.push(`Exam fee updated`);
+  }
+
+  if (changes.length > 0) {
+    history.push({
+      timestamp: new Date().toISOString(),
+      action: 'Booking Updated',
+      details: changes.join(', ')
+    });
+  }
+
+  // Update booking with provided fields
   const updatedBooking = {
     ...existingBooking,
-    status,
+    ...(status && { status }),
     ...(location && { location }),
     ...(selectedDate && { selectedDate }),
     ...(selectedTime && { selectedTime }),
     ...(notes !== undefined && { notes }),
+    ...(examFee !== undefined && { examFee }),
+    history,
     updatedAt: new Date().toISOString()
   };
-  
+
   await kv.set(bookingId, updatedBooking);
-  
-  console.log(`Booking ${bookingId} status updated to: ${status}${location ? ` with location: ${location}` : ''}${selectedDate ? ` on date: ${selectedDate}` : ''}${selectedTime ? ` at time: ${selectedTime}` : ''}`);
-  
+
+  console.log(`Booking ${bookingId} updated: ${changes.join(', ') || 'no changes'}`);
+
   // Send automatic confirmation email to customer if status is "confirmed"
   if (isChangingToConfirmed && sendEmail) {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
