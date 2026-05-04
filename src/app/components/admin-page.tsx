@@ -215,12 +215,25 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     ? bookings 
     : bookings.filter(b => b.status === filterStatus);
 
-  const upcomingBookings = filteredBookings.filter(b => {
-    const bookingDate = new Date(b.selectedDate + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return bookingDate >= today;
-  });
+  const upcomingBookings = filteredBookings
+    .filter(b => {
+      const bookingDate = new Date(b.selectedDate + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return bookingDate >= today;
+    })
+    .sort((a, b) => {
+      // Sort by date first
+      const dateA = new Date(a.selectedDate).getTime();
+      const dateB = new Date(b.selectedDate).getTime();
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
+      // If same date, sort by time
+      const timeA = a.selectedTime.split(' - ')[0];
+      const timeB = b.selectedTime.split(' - ')[0];
+      return timeA.localeCompare(timeB);
+    });
 
   const pastBookings = filteredBookings.filter(b => {
     const bookingDate = new Date(b.selectedDate + 'T00:00:00');
