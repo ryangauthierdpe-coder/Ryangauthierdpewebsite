@@ -2052,45 +2052,61 @@ app.delete("/make-server-e4d9f7d7/bookings/:id/permanent", async (c) => {
 app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
   try {
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
-    const apiKey = Deno.env.get('GOOGLE_CALENDAR_API_KEY');
-    
-    if (!calendarId || !apiKey) {
-      return c.json({ 
-        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID and GOOGLE_CALENDAR_API_KEY environment variables.' 
+
+    if (!calendarId) {
+      return c.json({
+        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID environment variable.'
       }, 500);
     }
-    
+
+    // Use OAuth token so private calendar events are visible
+    const accessToken = await getGoogleAccessToken();
+
     // Get start and end dates for the query (next 90 days)
     const now = new Date();
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 90);
-    
+
     const timeMin = now.toISOString();
     const timeMax = endDate.toISOString();
-    
-    // Fetch events from Google Calendar
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('Google Calendar API error:', data);
-      return c.json({ 
-        error: 'Failed to fetch calendar data', 
-        details: data.error?.message || 'Unknown error' 
+
+    // Use FreeBusy API — respects all event types including "Show as Busy" blocks
+    const freeBusyUrl = 'https://www.googleapis.com/calendar/v3/freeBusy';
+    const freeBusyResponse = await fetch(freeBusyUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        timeMin,
+        timeMax,
+        items: [{ id: calendarId }],
+      }),
+    });
+
+    const freeBusyData = await freeBusyResponse.json();
+
+    if (!freeBusyResponse.ok) {
+      console.error('Google Calendar FreeBusy API error:', freeBusyData);
+      return c.json({
+        error: 'Failed to fetch calendar data',
+        details: freeBusyData.error?.message || 'Unknown error'
       }, 500);
     }
-    
-    // Extract busy times from events
-    const busyTimes = data.items?.map((event: any) => ({
-      start: event.start.dateTime || event.start.date,
-      end: event.end.dateTime || event.end.date,
-      summary: event.summary || 'Busy',
-    })) || [];
-    
-    console.log(`Fetched ${busyTimes.length} events from Google Calendar`);
-    
+
+    // FreeBusy returns [{start, end}] intervals — map to busyTimes format
+    const intervals: Array<{ start: string; end: string }> =
+      freeBusyData.calendars?.[calendarId]?.busy || [];
+
+    const busyTimes = intervals.map((interval) => ({
+      start: interval.start,
+      end: interval.end,
+      summary: 'Busy',
+    }));
+
+    console.log(`Fetched ${busyTimes.length} busy intervals from Google Calendar FreeBusy API`);
+
     return c.json({ busyTimes });
   } catch (error) {
     console.error('Error fetching Google Calendar busy times:', error);
