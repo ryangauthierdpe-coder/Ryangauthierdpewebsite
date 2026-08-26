@@ -454,11 +454,14 @@ export function SchedulePage() {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-amber-900 mb-2">Limited Availability Notice</h3>
+              <h3 className="text-xl font-bold text-amber-900 mb-2">New Availability Released</h3>
               <p className="text-lg text-amber-800 leading-relaxed">
-                Thank you for your interest. Due to an unusually high volume of checkrides and scheduling commitments, availability is currently very limited. Please check back, as I will update openings as they become available.
+                Additional availability has been added to the schedule. More appointment times will be released as they become available.
               </p>
-              <p className="text-sm text-amber-700 mt-3 italic">Updated: April 23, 2026</p>
+              <p className="text-lg text-amber-800 leading-relaxed mt-2">
+                Please select the appropriate Service Type to view upcoming availability and schedule your appointment.
+              </p>
+              <p className="text-sm text-amber-700 mt-3 italic">Updated: August 26, 2026</p>
             </div>
           </div>
         </div>
