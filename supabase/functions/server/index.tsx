@@ -2367,14 +2367,14 @@ app.put("/make-server-e4d9f7d7/bookings/:id/update-full", async (c) => {
   }
   
   const bookingId = c.req.param('id');
-  const updatedData = parseResult.data;
-  
+  const { sendEmail: sendUpdateEmail = true, ...updatedData } = parseResult.data;
+
   // Get existing booking
   const existingBooking = await kv.get(bookingId);
   if (!existingBooking) {
     return c.json({ error: 'Booking not found' }, 404);
   }
-  
+
   // Check what changed
   const dateChanged = existingBooking.selectedDate !== updatedData.selectedDate;
   const timeChanged = existingBooking.selectedTime !== updatedData.selectedTime;
@@ -2391,8 +2391,8 @@ app.put("/make-server-e4d9f7d7/bookings/:id/update-full", async (c) => {
   
   console.log(`Booking ${bookingId} fully updated`);
   
-  // Send update email if date, time, or location changed (only for confirmed bookings)
-  if ((dateChanged || timeChanged || locationChanged) && updatedBooking.status === 'confirmed') {
+  // Send update email if date, time, or location changed (only for confirmed bookings, and only if requested)
+  if (sendUpdateEmail && (dateChanged || timeChanged || locationChanged) && updatedBooking.status === 'confirmed') {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
     if (resendApiKey) {

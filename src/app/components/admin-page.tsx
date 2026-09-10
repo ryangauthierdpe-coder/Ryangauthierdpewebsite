@@ -53,6 +53,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [emailConfirmationDate, setEmailConfirmationDate] = useState<string>('');
   const [emailConfirmationTime, setEmailConfirmationTime] = useState<string>('');
 
+  // Update email prompt state
+  const [updateEmailModalOpen, setUpdateEmailModalOpen] = useState(false);
+  const [pendingUpdateBookingId, setPendingUpdateBookingId] = useState<string>('');
+  const [pendingUpdateData, setPendingUpdateData] = useState<any>(null);
+
   // Manual booking creation state
   const [showManualBookingForm, setShowManualBookingForm] = useState(false);
   const [manualBookingData, setManualBookingData] = useState({
@@ -279,7 +284,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     }
   };
 
-  const updateBooking = async (bookingId: string, updatedData: any) => {
+  const updateBooking = async (bookingId: string, updatedData: any, sendEmail: boolean = true) => {
     setSavingBooking(true);
     try {
       const response = await fetch(
@@ -290,7 +295,7 @@ export function AdminPage({ onLogout }: AdminPageProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify(updatedData),
+          body: JSON.stringify({ ...updatedData, sendEmail }),
         }
       );
 
@@ -1284,7 +1289,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                   examFee: editingBookingData.examFee,
                                   notes: editingBookingData.notes
                                 };
-                                updateBooking(booking.bookingId, updatedData);
+                                setPendingUpdateBookingId(booking.bookingId);
+                                setPendingUpdateData(updatedData);
+                                setUpdateEmailModalOpen(true);
                               }}
                               onCancel={() => {
                                 setEditingBookingId('');
@@ -1522,7 +1529,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                   examFee: editingBookingData.examFee,
                                   notes: editingBookingData.notes
                                 };
-                                updateBooking(booking.bookingId, updatedData);
+                                setPendingUpdateBookingId(booking.bookingId);
+                                setPendingUpdateData(updatedData);
+                                setUpdateEmailModalOpen(true);
                               }}
                               onCancel={() => {
                                 setEditingBookingId('');
@@ -1789,6 +1798,47 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         currentLocation={emailConfirmationLocation}
         serviceType={emailConfirmationBookingId ? bookings.find(b => b.bookingId === emailConfirmationBookingId)?.serviceType || 'pp-initial-asel' : 'pp-initial-asel'}
       />
+
+      {/* Update Email Prompt Modal */}
+      {updateEmailModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-emerald-100 p-2 rounded-full">
+                <Mail className="w-5 h-5 text-emerald-700" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Send Update Email?</h2>
+            </div>
+            <p className="text-gray-700 mb-6">
+              Would you like to send an appointment update email to the applicant notifying them of these changes?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setUpdateEmailModalOpen(false);
+                  updateBooking(pendingUpdateBookingId, pendingUpdateData, true);
+                  setPendingUpdateBookingId('');
+                  setPendingUpdateData(null);
+                }}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+              >
+                Yes, Send Email
+              </button>
+              <button
+                onClick={() => {
+                  setUpdateEmailModalOpen(false);
+                  updateBooking(pendingUpdateBookingId, pendingUpdateData, false);
+                  setPendingUpdateBookingId('');
+                  setPendingUpdateData(null);
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
+              >
+                No, Save Only
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
