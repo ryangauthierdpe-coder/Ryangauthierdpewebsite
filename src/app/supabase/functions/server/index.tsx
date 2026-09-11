@@ -2065,7 +2065,7 @@ app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
       return c.json({ busyTimes: [] });
     }
 
-    // Use OAuth token so private calendar events are visible
+    // Use OAuth token (calendar.events scope) so private calendar events are visible
     const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
 
     // Get start and end dates for the query (next 90 days)
@@ -2076,42 +2076,36 @@ app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
     const timeMin = now.toISOString();
     const timeMax = endDate.toISOString();
 
-    // Use FreeBusy API — respects all event types including "Show as Busy" blocks
-    const freeBusyUrl = 'https://www.googleapis.com/calendar/v3/freeBusy';
-    const freeBusyResponse = await fetch(freeBusyUrl, {
-      method: 'POST',
+    // Use events list endpoint — works with calendar.events scope (no FreeBusy scope needed)
+    const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`);
+    url.searchParams.set('timeMin', timeMin);
+    url.searchParams.set('timeMax', timeMax);
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('orderBy', 'startTime');
+
+    const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        timeMin,
-        timeMax,
-        items: [{ id: calendarId }],
-      }),
     });
 
-    const freeBusyData = await freeBusyResponse.json();
+    const data = await response.json();
 
-    if (!freeBusyResponse.ok) {
-      console.error('Google Calendar FreeBusy API error:', freeBusyData);
+    if (!response.ok) {
+      console.error('Google Calendar events API error:', data);
       return c.json({
         error: 'Failed to fetch calendar data',
-        details: freeBusyData.error?.message || 'Unknown error'
+        details: data.error?.message || 'Unknown error'
       }, 500);
     }
 
-    // FreeBusy returns [{start, end}] intervals — map to busyTimes format
-    const intervals: Array<{ start: string; end: string }> =
-      freeBusyData.calendars?.[calendarId]?.busy || [];
-
-    const busyTimes = intervals.map((interval) => ({
-      start: interval.start,
-      end: interval.end,
-      summary: 'Busy',
+    const busyTimes = (data.items || []).map((event: any) => ({
+      start: event.start.dateTime || event.start.date,
+      end: event.end.dateTime || event.end.date,
+      summary: event.summary || 'Busy',
     }));
 
-    console.log(`Fetched ${busyTimes.length} busy intervals from Google Calendar FreeBusy API`);
+    console.log(`Fetched ${busyTimes.length} events from Google Calendar`);
 
     return c.json({ busyTimes });
   } catch (error) {
