@@ -2052,14 +2052,17 @@ app.delete("/make-server-e4d9f7d7/bookings/:id/permanent", async (c) => {
 app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
   try {
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
-
     const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
 
-    if (!calendarId || !serviceAccountEmail || !serviceAccountKey) {
-      return c.json({
-        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY environment variables.'
-      }, 500);
+    if (!calendarId) {
+      console.warn('GOOGLE_CALENDAR_ID not set — returning empty busy times');
+      return c.json({ busyTimes: [] });
+    }
+
+    if (!serviceAccountEmail || !serviceAccountKey) {
+      console.warn('Google service account credentials not set — returning empty busy times');
+      return c.json({ busyTimes: [] });
     }
 
     // Use OAuth token so private calendar events are visible
@@ -2113,7 +2116,8 @@ app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
     return c.json({ busyTimes });
   } catch (error) {
     console.error('Error fetching Google Calendar busy times:', error);
-    return c.json({ error: 'Failed to fetch calendar busy times', details: error.message }, 500);
+    // Return empty busy times so the calendar page still loads
+    return c.json({ busyTimes: [] });
   }
 });
 

@@ -1,6 +1,13 @@
 import { SignJWT, importPKCS8 } from "npm:jose@5.9.6";
 
-export async function getGoogleAccessToken(serviceAccountEmail: string, serviceAccountKey: string): Promise<string> {
+export async function getGoogleAccessToken(serviceAccountEmail?: string, serviceAccountKey?: string): Promise<string> {
+  if (!serviceAccountEmail || !serviceAccountKey) {
+    throw new Error(
+      'Google service account credentials are not configured. ' +
+      'Please set GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY environment variables.'
+    );
+  }
+
   const tokenUrl = 'https://oauth2.googleapis.com/token';
   const scopes = ['https://www.googleapis.com/auth/calendar.events'];
   const now = Math.floor(Date.now() / 1000);
