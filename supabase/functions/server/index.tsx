@@ -2053,14 +2053,17 @@ app.get("/make-server-e4d9f7d7/calendar/busy-times", async (c) => {
   try {
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
 
-    if (!calendarId) {
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
+
+    if (!calendarId || !serviceAccountEmail || !serviceAccountKey) {
       return c.json({
-        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID environment variable.'
+        error: 'Google Calendar not configured. Please add GOOGLE_CALENDAR_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY environment variables.'
       }, 500);
     }
 
     // Use OAuth token so private calendar events are visible
-    const accessToken = await getGoogleAccessToken();
+    const accessToken = await getGoogleAccessToken(serviceAccountEmail, serviceAccountKey);
 
     // Get start and end dates for the query (next 90 days)
     const now = new Date();
