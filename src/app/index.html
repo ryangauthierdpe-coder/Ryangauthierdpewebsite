@@ -6,6 +6,14 @@
     <meta name="description" content="Ryan Gauthier DPE - Designated Pilot Examiner at Westerly State Airport. Schedule your Private Pilot checkride, administrative functions, and pilot examinations." />
     <meta name="keywords" content="DPE, Designated Pilot Examiner, Private Pilot, Checkride, Westerly State Airport, WST, Rhode Island, Flight Test, ASEL" />
     <meta name="author" content="Ryan Gauthier" />
+    <meta name="robots" content="index, follow" />
+    <script>
+      // Ensure robots meta is not overridden to noindex by the build pipeline
+      (function() {
+        var existing = document.querySelector('meta[name="robots"]');
+        if (existing) { existing.setAttribute('content', 'index, follow'); }
+      })();
+    </script>
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
