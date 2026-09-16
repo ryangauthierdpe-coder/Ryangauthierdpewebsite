@@ -26,6 +26,14 @@ const SERVICE_TYPE_LABELS: { [key: string]: string } = {
   'night': 'Night Flight Limitation Removals',
 };
 
+// Administrative service types — no flight, so no arrival/prepare/weather in confirmation emails
+const ADMINISTRATIVE_SERVICE_TYPES = new Set([
+  'foreign', 'military', 'cfi-renewal', 'ground-instructor',
+  'sic', 'soe', 'atp', 'remote', 'night',
+]);
+
+const isAdministrativeService = (serviceType: string) => ADMINISTRATIVE_SERVICE_TYPES.has(serviceType);
+
 const app = new Hono();
 
 // Helper function to safely parse JSON
@@ -822,41 +830,44 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
         // Extract just the start time from the selectedTime range (e.g., "9:00 AM - 11:30 AM" -> "9:00 AM")
         const startTimeOnly = updatedBooking.selectedTime.split(' - ')[0];
         
-        // Determine arrival instructions based on location
+        // Determine arrival instructions based on location (not shown for admin services)
+        const isAdmin = isAdministrativeService(updatedBooking.serviceType);
         let arrivalInstructionsHtml = '';
         const location = updatedBooking.location || '';
-        
-        if (location.includes('WST') || location.includes('Westerly')) {
-          arrivalInstructionsHtml = `
-          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
-          <h3>ARRIVAL INFORMATION:</h3>
-          <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
-          <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
-          <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
-          <p>If you have any difficulty finding the location, feel free to reach out.</p>
-          `;
-        } else if (location.includes('GON') || location.includes('Groton')) {
-          arrivalInstructionsHtml = `
-          <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
-          <h3>ARRIVAL INFORMATION:</h3>
-          <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
-          <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
-          <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
-          <p>If you have any difficulty finding the location, feel free to reach out.</p>
-          `;
+
+        if (!isAdmin) {
+          if (location.includes('WST') || location.includes('Westerly')) {
+            arrivalInstructionsHtml = `
+            <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+
+            <h3>ARRIVAL INFORMATION:</h3>
+            <p>Upon arrival at WST on the day of your practical test, please proceed to the Main Terminal building, where we will meet.</p>
+            <p>Parking is available on the ramp directly in front of the terminal. Look for spaces marked with a "T" in the center of the ramp and park facing the terminal.</p>
+            <p>Enter the building through the door on the left, which is marked "General Aviation." We will meet in the conference room located inside that entrance.</p>
+            <p>If you have any difficulty finding the location, feel free to reach out.</p>
+            `;
+          } else if (location.includes('GON') || location.includes('Groton')) {
+            arrivalInstructionsHtml = `
+            <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
+
+            <h3>ARRIVAL INFORMATION:</h3>
+            <p>Upon arrival at GON on the day of your practical test, please proceed to the Main Terminal building - the brick building adjacent to the control tower.</p>
+            <p>Upon landing, advise the Tower controller that you are "parking at Coastal Air to meet Ryan for a checkride." This will ensure they direct you to the correct location.</p>
+            <p>Parking is available on the ramp at the base of the Control Tower. You will likely see several Cherokee aircraft parked on the ramp—please park alongside one of them, making sure not to park on the white vehicle lane.</p>
+            <p>If you have any difficulty finding the location, feel free to reach out.</p>
+            `;
+          }
         }
-        
+
         // Generate Google Calendar URL
         const calendarUrl = generateGoogleCalendarUrlForEmail(updatedBooking, formattedDate, serviceTypeLabel);
-        
+
         const confirmationEmailHtml = `
           <p>Dear ${updatedBooking.name},</p>
           <p>Great news! Your appointment with Ryan Gauthier, DPE has been <strong>confirmed</strong>.</p>
-          
+
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
+
           <h3>APPOINTMENT DETAILS:</h3>
           <p>
             <strong>Date:</strong> ${formattedDate}<br>
@@ -865,16 +876,16 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Service Type:</strong> ${serviceTypeLabel}${updatedBooking.retestCertType ? `<br><strong>Retest For:</strong> ${updatedBooking.retestCertType}` : ''}<br>
             <strong>Exam Fee:</strong> $${updatedBooking.examFee || 'TBD'}
           </p>
-          
+
           <div style=\"text-align: center; margin: 20px 0;\">
             <a href=\"${calendarUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;\">
               📅 Add to Calendar
             </a>
             <p style=\"font-size: 12px; color: #666; margin-top: 8px;\">Click the button above to add this appointment to your personal calendar</p>
           </div>
-          
+
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
+
           <h3>APPLICANT INFORMATION:</h3>
           <p>
             <strong>Name:</strong> ${updatedBooking.name}<br>
@@ -884,21 +895,23 @@ app.put("/make-server-e4d9f7d7/bookings/:id", async (c) => {
             <strong>Aircraft:</strong> ${updatedBooking.aircraftMakeModel}
           </p>
           <p>Please advise if any of this information is incorrect.</p>
-          
+
           ${arrivalInstructionsHtml}
-          
+
+          ${!isAdmin ? `
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
+
           <h3>WHAT TO PREPARE:</h3>
           <p>Please visit <a href="http://www.DPERyan.com">www.DPERyan.com</a> and navigate to the Preparation page for important information to ensure you are fully prepared for your Practical Test.</p>
-          
+
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
+
           <h3>WEATHER:</h3>
           <p>We cannot begin the exam unless we have a reasonable expectation that we will be able to complete the exam, to include the flight. If you have any concerns that we will not be able to fly on the day of your practical test, please let me know in advance so that we may reschedule.</p>
-          
+          ` : ''}
+
           <hr style="border: none; border-top: 2px solid #10b981; margin: 20px 0;">
-          
+
           <p>If you need to reschedule or have any questions, please contact me:</p>
           <p>
             <strong>Phone:</strong> 860-912-3283<br>
