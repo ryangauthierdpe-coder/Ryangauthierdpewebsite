@@ -47,16 +47,26 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [showDeleted, setShowDeleted] = useState(false);
   const [restoringBooking, setRestoringBooking] = useState<string>('');
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<string>('');
-  const [emailConfirmationModalOpen, setEmailConfirmationModalOpen] = useState(false);
-  const [emailConfirmationBookingId, setEmailConfirmationBookingId] = useState<string>('');
-  const [emailConfirmationLocation, setEmailConfirmationLocation] = useState<string>('');
-  const [emailConfirmationDate, setEmailConfirmationDate] = useState<string>('');
-  const [emailConfirmationTime, setEmailConfirmationTime] = useState<string>('');
+  // Unified email prompt modal state
+  const [emailPromptOpen, setEmailPromptOpen] = useState(false);
+  const [emailPromptAction, setEmailPromptAction] = useState<'confirm' | 'cancel' | 'update'>('confirm');
+  const [emailPromptName, setEmailPromptName] = useState<string>('');
+  const [emailPromptCallback, setEmailPromptCallback] = useState<(sendEmail: boolean) => void>(() => () => {});
 
-  // Update email prompt state
-  const [updateEmailModalOpen, setUpdateEmailModalOpen] = useState(false);
+  // Pending update state (used in onSave callbacks)
   const [pendingUpdateBookingId, setPendingUpdateBookingId] = useState<string>('');
   const [pendingUpdateData, setPendingUpdateData] = useState<any>(null);
+
+  const openEmailPrompt = (
+    action: 'confirm' | 'cancel' | 'update',
+    name: string,
+    callback: (sendEmail: boolean) => void
+  ) => {
+    setEmailPromptAction(action);
+    setEmailPromptName(name);
+    setEmailPromptCallback(() => callback);
+    setEmailPromptOpen(true);
+  };
 
   // Manual booking creation state
   const [showManualBookingForm, setShowManualBookingForm] = useState(false);
@@ -362,46 +372,40 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     
     if (!confirmDelete) return;
 
-    // Ask if they want to notify the applicant
-    const sendEmail = window.confirm(
-      `Would you like to notify ${booking.name} of this cancellation via email?`
-    );
-    
-    setDeletingBooking(bookingId);
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}?sendEmail=${sendEmail}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
+    // Ask via modal if they want to notify the applicant
+    openEmailPrompt('cancel', booking.name, async (sendEmail) => {
+      setDeletingBooking(bookingId);
+      try {
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-e4d9f7d7/bookings/${bookingId}?sendEmail=${sendEmail}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${publicAnonKey}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete booking');
         }
-      );
 
-      const data = await response.json();
+        setBookings(prevBookings => prevBookings.filter(b => b.bookingId !== bookingId));
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete booking');
+        if (selectedBooking?.bookingId === bookingId) {
+          setSelectedBooking(null);
+        }
+
+        alert('Booking deleted successfully!');
+      } catch (err) {
+        console.error('Error deleting booking:', err);
+        alert(err instanceof Error ? err.message : 'Failed to delete booking');
+      } finally {
+        setDeletingBooking('');
       }
-
-      // Update local state
-      setBookings(prevBookings =>
-        prevBookings.filter(b => b.bookingId !== bookingId)
-      );
-      
-      // Close the details panel if this booking was selected
-      if (selectedBooking?.bookingId === bookingId) {
-        setSelectedBooking(null);
-      }
-
-      alert('Booking deleted successfully!');
-    } catch (err) {
-      console.error('Error deleting booking:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete booking');
-    } finally {
-      setDeletingBooking('');
-    }
+    });
   };
 
   const restoreBooking = async (bookingId: string) => {
@@ -1291,7 +1295,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 };
                                 setPendingUpdateBookingId(booking.bookingId);
                                 setPendingUpdateData(updatedData);
-                                setUpdateEmailModalOpen(true);
+                                openEmailPrompt('update', booking.name, (sendEmail) => {
+                                  updateBooking(booking.bookingId, updatedData, sendEmail);
+                                  setPendingUpdateBookingId('');
+                                  setPendingUpdateData(null);
+                                });
                               }}
                               onCancel={() => {
                                 setEditingBookingId('');
@@ -1410,9 +1418,10 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 onChange={(e) => {
                                   const newStatus = e.target.value;
                                   if (newStatus === 'confirmed' || newStatus === 'cancelled') {
-                                    const actionText = newStatus === 'confirmed' ? 'confirmation' : 'cancellation';
-                                    const sendEmail = window.confirm(`Would you like to notify ${booking.name} of this ${actionText} via email?`);
-                                    updateBookingStatus(booking.bookingId, newStatus, undefined, undefined, undefined, sendEmail);
+                                    const action = newStatus === 'confirmed' ? 'confirm' : 'cancel';
+                                    openEmailPrompt(action, booking.name, (sendEmail) => {
+                                      updateBookingStatus(booking.bookingId, newStatus, undefined, undefined, undefined, sendEmail);
+                                    });
                                   } else {
                                     updateBookingStatus(booking.bookingId, newStatus);
                                   }
@@ -1531,7 +1540,11 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                                 };
                                 setPendingUpdateBookingId(booking.bookingId);
                                 setPendingUpdateData(updatedData);
-                                setUpdateEmailModalOpen(true);
+                                openEmailPrompt('update', booking.name, (sendEmail) => {
+                                  updateBooking(booking.bookingId, updatedData, sendEmail);
+                                  setPendingUpdateBookingId('');
+                                  setPendingUpdateData(null);
+                                });
                               }}
                               onCancel={() => {
                                 setEditingBookingId('');
@@ -1638,6 +1651,14 @@ export function AdminPage({ onLogout }: AdminPageProps) {
                               >
                                 <Edit className="w-4 h-4" />
                                 Edit Booking
+                              </button>
+                              <button
+                                onClick={() => deleteBooking(booking.bookingId)}
+                                disabled={deletingBooking === booking.bookingId}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                {deletingBooking === booking.bookingId ? 'Deleting...' : 'Delete Booking'}
                               </button>
                             </div>
                           )}
@@ -1772,73 +1793,17 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         )}
       </div>
 
-      {/* Email Confirmation Modal */}
+      {/* Unified Email Prompt Modal */}
       <EmailConfirmationModal
-        isOpen={emailConfirmationModalOpen}
-        onClose={() => {
-          setEmailConfirmationModalOpen(false);
-          setEmailConfirmationBookingId('');
-          setEmailConfirmationLocation('');
-          setEmailConfirmationDate('');
-          setEmailConfirmationTime('');
+        isOpen={emailPromptOpen}
+        onClose={() => setEmailPromptOpen(false)}
+        onConfirm={(sendEmail) => {
+          emailPromptCallback(sendEmail);
+          setEmailPromptOpen(false);
         }}
-        onConfirm={() => {
-          if (emailConfirmationBookingId) {
-            updateBookingStatus(emailConfirmationBookingId, 'confirmed', emailConfirmationLocation, emailConfirmationDate, emailConfirmationTime);
-            setEmailConfirmationModalOpen(false);
-            setEmailConfirmationBookingId('');
-            setEmailConfirmationLocation('');
-            setEmailConfirmationDate('');
-            setEmailConfirmationTime('');
-          }
-        }}
-        bookingName={emailConfirmationBookingId ? bookings.find(b => b.bookingId === emailConfirmationBookingId)?.name || '' : ''}
-        currentDate={emailConfirmationDate}
-        currentTime={emailConfirmationTime}
-        currentLocation={emailConfirmationLocation}
-        serviceType={emailConfirmationBookingId ? bookings.find(b => b.bookingId === emailConfirmationBookingId)?.serviceType || 'pp-initial-asel' : 'pp-initial-asel'}
+        action={emailPromptAction}
+        applicantName={emailPromptName}
       />
-
-      {/* Update Email Prompt Modal */}
-      {updateEmailModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-emerald-100 p-2 rounded-full">
-                <Mail className="w-5 h-5 text-emerald-700" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">Send Update Email?</h2>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Would you like to send an appointment update email to the applicant notifying them of these changes?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setUpdateEmailModalOpen(false);
-                  updateBooking(pendingUpdateBookingId, pendingUpdateData, true);
-                  setPendingUpdateBookingId('');
-                  setPendingUpdateData(null);
-                }}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-              >
-                Yes, Send Email
-              </button>
-              <button
-                onClick={() => {
-                  setUpdateEmailModalOpen(false);
-                  updateBooking(pendingUpdateBookingId, pendingUpdateData, false);
-                  setPendingUpdateBookingId('');
-                  setPendingUpdateData(null);
-                }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
-              >
-                No, Save Only
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
