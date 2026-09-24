@@ -45,7 +45,7 @@ export function DebriefDigestPage() {
         {/* Main Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-center text-gray-900">Debrief Digest</h2>
-          <p className="text-sm text-center text-gray-600 mt-2">(Updated March 2026)</p>
+          <p className="text-sm text-center text-gray-600 mt-2">(Updated September 2026)</p>
         </div>
 
         {/* Section 1: Qualifying the Applicant */}
@@ -75,7 +75,16 @@ export function DebriefDigestPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="text-emerald-600 mr-3 font-bold text-lg">•</span>
-                    <span className="text-gray-800"><strong>Pre-solo Aeronautical Knowledge</strong> is make/model specific – reissue if initial solo was in a different aircraft.</span>
+                    <div className="flex-1">
+                      <span className="text-gray-800"><strong>Pre-solo Aeronautical Knowledge</strong> is make/model specific – reissue if initial solo was in a different aircraft.</span>
+                      <div className="mt-2 ml-3 pl-3 border-l-2 border-emerald-200 space-y-2 text-sm text-gray-600 leading-relaxed">
+                        <p>This continues to be a recurring issue when qualifying applicants for practical tests. The pre-solo aeronautical knowledge and flight training endorsements identified in AC 61-65K, A.4 and A.5 are specific to the make and model of aircraft to be flown.</p>
+                        <p>For example, if an applicant initially solos in a CE-172, but later transitions to a PA-28-180 and completes some or all of the remaining solo aeronautical experience in that aircraft, the applicant must receive the required pre-solo training and endorsements applicable to the PA-28-180 before conducting solo flight in that aircraft.</p>
+                        <p>I frequently see instructors issue A.7, authorizing an additional 90-day period of solo flight, after an applicant has transitioned to a different make/model aircraft. However, A.7 does not replace the make/model-specific requirements of A.4 and A.5. Those endorsements must also be completed for the aircraft in which the applicant will conduct solo flight.</p>
+                        <p>This is more than an endorsement technicality. Solo flight conducted without the required § 61.87 endorsements may not constitute qualifying aeronautical experience toward the certificate sought. As a result, an applicant may arrive for a practical test without meeting the applicable aeronautical experience requirements, even though the required flight time appears in the logbook.</p>
+                        <p>Before recommending an applicant for a practical test, review the applicant's solo history and ensure that A.4 and A.5 were properly completed for each make/model aircraft in which qualifying solo aeronautical experience was obtained.</p>
+                      </div>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -157,6 +166,9 @@ export function DebriefDigestPage() {
                   <div className="border-l-4 border-blue-500 pl-4">
                     <h5 className="text-lg font-bold text-blue-900 mb-2">Personal Minimums</h5>
                     <p className="text-gray-800">Documenting in writing to support go/no-go decisions.</p>
+                    <div className="mt-2 ml-3 pl-3 border-l-2 border-blue-200 space-y-2 text-sm text-gray-600 leading-relaxed">
+                      <p><strong>Personal Minimums Are Limits, Not Suggestions</strong> – If you establish a personal minimum of 20 knots, but are willing to fly at 22 knots simply because the conditions "seem okay," then 20 knots was never truly your minimum. Personal minimums are intended to establish objective decision-making boundaries before external pressures or circumstances influence the decision. Conditions may justify making your minimums more conservative, but routinely rationalizing exceeding them defeats their purpose.</p>
+                    </div>
                   </div>
 
                   {/* Inoperative Equipment */}
@@ -176,6 +188,9 @@ export function DebriefDigestPage() {
                   <div className="border-l-4 border-blue-500 pl-4">
                     <h5 className="text-lg font-bold text-blue-900 mb-2">VFR Flight Plans</h5>
                     <p className="text-gray-800">Knowing how to file, open, close, and amend.</p>
+                    <div className="mt-2 ml-3 pl-3 border-l-2 border-blue-200 space-y-2 text-sm text-gray-600 leading-relaxed">
+                      <p><strong>Know How to File, Open, Amend, and Close a VFR Flight Plan</strong> – "I've never actually filed one" continues to be a common response during practical tests. Why not? Filing a VFR flight plan should not be something you experience for the first time while preparing for a checkride. Use them throughout your training. Actually filing, opening, amending, and closing flight plans develops familiarity with the process and, more importantly, helps you understand their purpose and the search-and-rescue benefits they provide.</p>
+                    </div>
                   </div>
 
                   {/* Pilot-Controlled Lighting */}
